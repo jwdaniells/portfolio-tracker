@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 
 // External data files
-const DATA_URL     = "./price_history-2.json";
-const ANALYSIS_URL = "./analysis.json";
+const _cbv = Date.now();
+const DATA_URL     = `./price_history-2.json?v=${_cbv}`;
+const ANALYSIS_URL = `./analysis.json?v=${_cbv}`;
 const loadTime = () => new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" });
 
 
