@@ -37,6 +37,7 @@ GREEN  = RGBColor(0x70, 0xAD, 0x47)
 RED    = RGBColor(0xE0, 0x70, 0x60)
 BLUE   = RGBColor(0x44, 0x72, 0xC4)
 WHITE  = RGBColor(0xFF, 0xFF, 0xFF)
+DARKBLUE = RGBColor(0x1A, 0x2E, 0x4A)  # dark navy for body text
 
 # Hex versions for matplotlib
 BG      = "#0f1923"
@@ -93,7 +94,7 @@ def heading2(doc, text):
     run = p.add_run(text)
     run.font.size  = Pt(11)
     run.font.bold  = True
-    run.font.color.rgb = LIGHT
+    run.font.color.rgb = DARKBLUE
     run.font.name  = "Calibri"
 
 def body(doc, text, italic=False, colour=None):
@@ -104,7 +105,7 @@ def body(doc, text, italic=False, colour=None):
     run.font.size   = Pt(10)
     run.font.italic = italic
     run.font.name   = "Calibri"
-    run.font.color.rgb = colour if colour else LIGHT
+    run.font.color.rgb = colour if colour else DARKBLUE
 
 def bullet(doc, text, level=0):
     p = doc.add_paragraph(style="List Bullet")
@@ -114,7 +115,7 @@ def bullet(doc, text, level=0):
     run = p.add_run(text)
     run.font.size  = Pt(10)
     run.font.name  = "Calibri"
-    run.font.color.rgb = LIGHT
+    run.font.color.rgb = DARKBLUE
 
 def code_line(doc, text):
     p = doc.add_paragraph()
@@ -162,7 +163,7 @@ def add_artifact_table(doc, rows):
             run = cell.paragraphs[0].add_run(val)
             run.font.size = Pt(9)
             run.font.name = "Courier New" if i == 0 else "Calibri"
-            run.font.color.rgb = GOLD if i == 0 else LIGHT
+            run.font.color.rgb = GOLD if i == 0 else DARKBLUE
 
 # ══════════════════════════════════════════════════════════════════════════════
 # DIAGRAMS
@@ -395,8 +396,8 @@ def build_doc():
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = p.add_run("DANIELLS PORTFOLIO TRACKER")
-    run.font.size  = Pt(26)
+    run = p.add_run("DANIELLS PORTFOLIO & RETIREMENT TRACKER")
+    run.font.size  = Pt(24)
     run.font.bold  = True
     run.font.color.rgb = GOLD
     run.font.name  = "Calibri"
@@ -405,7 +406,7 @@ def build_doc():
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = p.add_run("System Documentation")
     run.font.size  = Pt(16)
-    run.font.color.rgb = LIGHT
+    run.font.color.rgb = DARKBLUE
     run.font.name  = "Calibri"
 
     doc.add_paragraph()
@@ -418,9 +419,9 @@ def build_doc():
     doc.add_paragraph()
 
     for line, size, col in [
-        (f"Version: 1.20", 11, LIGHT),
-        (f"Date: {TODAY}", 11, LIGHT),
-        ("Author: John Daniells", 11, LIGHT),
+        (f"Version: 1.20", 11, DARKBLUE),
+        (f"Date: {TODAY}", 11, DARKBLUE),
+        ("Author: John Daniells", 11, DARKBLUE),
         ("Classification: Personal / Confidential", 10, GREY),
     ]:
         p = doc.add_paragraph()
@@ -506,7 +507,7 @@ def build_doc():
         set_row_shading(row, "121e2b" if idx % 2 == 0 else "0f1923")
         for i, val in enumerate([layer, tech, detail]):
             run = row.cells[i].paragraphs[0].add_run(val)
-            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = LIGHT
+            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = DARKBLUE
 
     # ── 3. Component Inventory ─────────────────────────────────────────────────
     heading1(doc, "3. Component Inventory")
@@ -608,7 +609,7 @@ def build_doc():
         run1 = p.add_run(f"{field}  ")
         run1.font.name = "Courier New"; run1.font.size = Pt(9); run1.font.color.rgb = GOLD
         run2 = p.add_run(desc)
-        run2.font.name = "Calibri"; run2.font.size = Pt(9.5); run2.font.color.rgb = LIGHT
+        run2.font.name = "Calibri"; run2.font.size = Pt(9.5); run2.font.color.rgb = DARKBLUE
 
     heading2(doc, "Key Data Rules")
     for b in [
@@ -669,7 +670,7 @@ def build_doc():
         run1 = p.add_run(f"{name}:  ")
         run1.font.bold = True; run1.font.size = Pt(10.5); run1.font.color.rgb = GOLD; run1.font.name = "Calibri"
         run2 = p.add_run(desc)
-        run2.font.size = Pt(10); run2.font.color.rgb = LIGHT; run2.font.name = "Calibri"
+        run2.font.size = Pt(10); run2.font.color.rgb = DARKBLUE; run2.font.name = "Calibri"
 
     # ── 8. Supported Instruments ───────────────────────────────────────────────
     heading1(doc, "8. Supported Instruments & Tickers")
@@ -705,7 +706,7 @@ def build_doc():
             run = row.cells[i].paragraphs[0].add_run(val)
             run.font.size = Pt(9)
             run.font.name = "Courier New" if i in (0, 2) else "Calibri"
-            run.font.color.rgb = GOLD if i == 0 else LIGHT
+            run.font.color.rgb = GOLD if i == 0 else DARKBLUE
 
     body(doc, "Note: Unit trusts return prices in pence (GBp) from Yahoo Finance. The fetch script automatically divides by 100 to convert to GBP. ETF prices on .L exchange are also returned in pence.", italic=True, colour=GREY)
 
@@ -738,7 +739,7 @@ def build_doc():
         set_row_shading(row, "121e2b" if idx % 2 == 0 else "0f1923")
         for i, val in enumerate(row_data):
             run = row.cells[i].paragraphs[0].add_run(val)
-            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = LIGHT
+            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = DARKBLUE
 
     heading2(doc, "Troubleshooting")
     for issue, fix in [
@@ -755,7 +756,7 @@ def build_doc():
         r1 = p.add_run(f"{issue}: ")
         r1.font.bold = True; r1.font.color.rgb = GOLD; r1.font.size = Pt(10); r1.font.name = "Calibri"
         r2 = p.add_run(fix)
-        r2.font.color.rgb = LIGHT; r2.font.size = Pt(10); r2.font.name = "Calibri"
+        r2.font.color.rgb = DARKBLUE; r2.font.size = Pt(10); r2.font.name = "Calibri"
 
     # ── 10. Key URLs & References ───────────────────────────────────────────────
     heading1(doc, "10. Key URLs & References")
@@ -775,12 +776,254 @@ def build_doc():
         r2 = p.add_run(url)
         r2.font.size = Pt(9.5); r2.font.color.rgb = BLUE; r2.font.name = "Courier New"
 
+    # ══════════════════════════════════════════════════════════════════════════
+    # PART 2 — RETIREMENT PLANNER
+    # ══════════════════════════════════════════════════════════════════════════
+    doc.add_page_break()
+
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run("PART 2 — RETIREMENT PLANNER")
+    run.font.size = Pt(20); run.font.bold = True; run.font.color.rgb = GOLD; run.font.name = "Calibri"
+    doc.add_paragraph()
+    add_horizontal_rule(doc)
+
+    # ── R1. Purpose & Overview ─────────────────────────────────────────────────
+    heading1(doc, "R1. Purpose & Overview")
+    body(doc, (
+        "The Retirement Planner is a standalone financial modelling tool that works alongside the "
+        "Portfolio Tracker. Its purpose is to project whether the combined investment portfolio will "
+        "sustain a target retirement income through to age 95, accounting for UK income tax, state "
+        "pension, defined benefit pensions, PCLS lump sums, mortgage obligations, and inflation."
+    ))
+    heading2(doc, "Key Objectives")
+    for b in [
+        "Model year-by-year portfolio drawdown across John's and Elaine's accounts (SIPP, ISA) from retirement in 2031.",
+        "Optimise the SIPP drawdown split between John and Elaine to minimise combined income tax each year.",
+        "Apply UK 2025/26 income tax rules including personal allowance taper above £100k and all three tax bands.",
+        "Model three growth scenarios (Bear 3%, Central 5%, Bull 7% real return) simultaneously.",
+        "Show portfolio exhaustion age — will the money last to 95?",
+        "Calculate PCLS (25% tax-free lump sum) from SIPPs at retirement and model use to clear the mortgage.",
+        "Project inheritance tax (IHT) liability including property value, NRB, RNRB, and taper rules.",
+        "Allow all assumptions to be edited live in the browser with instant recalculation.",
+    ]:
+        bullet(doc, b)
+
+    # ── R2. Architecture ───────────────────────────────────────────────────────
+    heading1(doc, "R2. Architecture & Technology")
+    body(doc, (
+        "The Retirement Planner is implemented as a React single-page application, identical in "
+        "technology to the Portfolio Tracker. It is served from a separate entry point "
+        "(retirement.html) which dynamically fetches, Babel-transforms and mounts "
+        "retirement_planner.jsx. The planner reads live portfolio values directly from "
+        "price_history-2.json so projections always start from current balances."
+    ))
+
+    tbl = doc.add_table(rows=1, cols=3)
+    tbl.style = "Table Grid"
+    hdr = tbl.rows[0]
+    for i, h in enumerate(["File", "Role", "Notes"]):
+        set_cell_bg(hdr.cells[i], "0a1420")
+        run = hdr.cells[i].paragraphs[0].add_run(h.upper())
+        run.font.bold = True; run.font.size = Pt(9); run.font.color.rgb = GOLD; run.font.name = "Calibri"
+    for idx, (f, r, n) in enumerate([
+        ("retirement.html",         "Entry point",    "Fetches + Babel-transforms the JSX; mounts React app; no password gate"),
+        ("retirement_planner.jsx",  "Main component", "All logic, UI and modelling in a single JSX file (~700 lines)"),
+        ("price_history-2.json",    "Data source",    "Live portfolio values loaded on startup to seed projection balances"),
+    ]):
+        row = tbl.add_row()
+        set_row_shading(row, "121e2b" if idx % 2 == 0 else "0f1923")
+        for i, val in enumerate([f, r, n]):
+            run = row.cells[i].paragraphs[0].add_run(val)
+            run.font.size = Pt(9)
+            run.font.name = "Courier New" if i == 0 else "Calibri"
+            run.font.color.rgb = GOLD if i == 0 else DARKBLUE
+
+    # ── R3. Projection Model ───────────────────────────────────────────────────
+    heading1(doc, "R3. Financial Projection Model")
+
+    heading2(doc, "Pre-Retirement Growth Phase (2026–2031)")
+    body(doc, (
+        "Before the retirement year, the model grows each account forward year-by-year applying "
+        "the selected growth rate plus inflation (nominal return). Monthly contributions of £2,011 "
+        "are distributed 70% to John's SIPP, 20% to Elaine's SIPP, and 5% each to their ISAs."
+    ))
+
+    heading2(doc, "Retirement Drawdown Phase (2031 onwards)")
+    for b in [
+        "Each year, the model identifies a target net income requirement (base £60,000/year post-mortgage clearing).",
+        "Before the mortgage is cleared (age 67), an additional £19,200/year (£1,600/month) is added to the income target.",
+        "Stepped income reductions apply in later years: -10% from age 75, -15% from age 80, -20% from age 85.",
+        "Guaranteed income (DB pensions, State Pension, LSEG pension) is deducted from the target before any portfolio draw.",
+        "An optimisation loop (1% SIPP split increments) finds the exact John/Elaine SIPP draw split that minimises total tax.",
+        "ISA withdrawals are used only after SIPP capacity is exhausted — ISA income is tax-free.",
+        "Remaining balances grow at the nominal rate each year after drawdown.",
+        "The model runs year-by-year until John reaches age 95 or the portfolio is exhausted.",
+    ]:
+        bullet(doc, b)
+
+    heading2(doc, "PCLS (Pension Commencement Lump Sum)")
+    for b in [
+        "At retirement (John age 63, 2031), 25% of both SIPPs is taken as tax-free PCLS.",
+        "The combined PCLS is used to clear the outstanding mortgage balance (modelled at £250,000 at retirement).",
+        "After PCLS is taken, the remaining SIPP balances continue to grow and be drawn for income.",
+        "The mortgage cost (£1,600/month) is removed from the income target from the year of clearance onwards.",
+    ]:
+        bullet(doc, b)
+
+    heading2(doc, "Income Sources Modelled")
+    tbl = doc.add_table(rows=1, cols=3)
+    tbl.style = "Table Grid"
+    hdr = tbl.rows[0]
+    for i, h in enumerate(["Source", "Owner", "Annual Amount / Notes"]):
+        set_cell_bg(hdr.cells[i], "0a1420")
+        run = hdr.cells[i].paragraphs[0].add_run(h.upper())
+        run.font.bold = True; run.font.size = Pt(9); run.font.color.rgb = GOLD; run.font.name = "Calibri"
+    for idx, (src, owner, notes) in enumerate([
+        ("State Pension",        "John",   "£11,502/year from age 67 (2025/26 full new state pension)"),
+        ("State Pension",        "Elaine", "£11,502/year from age 67"),
+        ("Atkins DB Pension",    "John",   "£5,000/year from age 65 — not inflation-indexed"),
+        ("Pfizer DB Pension",    "John",   "£2,500/year from age 65 — not inflation-indexed"),
+        ("Disney DB Pension",    "Elaine", "£1,237/year from age 65 — not inflation-indexed"),
+        ("Nippon Life Pension",  "Elaine", "£135/year from age 65 — not inflation-indexed"),
+        ("LSEG DC Pension",      "John",   "Modelled as 5% annuity equivalent from retirement value"),
+        ("John SIPP drawdown",   "John",   "Tax-assessed at marginal rate; optimised split with Elaine"),
+        ("Elaine SIPP drawdown", "Elaine", "Tax-assessed at marginal rate; receives portion of combined draw"),
+        ("ISA withdrawals",      "Both",   "Tax-free; drawn after SIPP capacity used; split proportionally"),
+    ]):
+        row = tbl.add_row()
+        set_row_shading(row, "121e2b" if idx % 2 == 0 else "0f1923")
+        for i, val in enumerate([src, owner, notes]):
+            run = row.cells[i].paragraphs[0].add_run(val)
+            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = DARKBLUE
+
+    # ── R4. Tax Engine ─────────────────────────────────────────────────────────
+    heading1(doc, "R4. UK Tax Engine")
+    body(doc, (
+        "The planner contains a built-in UK income tax engine using 2025/26 rates with "
+        "frozen thresholds. It is applied independently to John and Elaine to calculate "
+        "their net income after tax each year."
+    ))
+    for b in [
+        "Personal Allowance: £12,570 (tapered by £1 for every £2 of income above £100,000)",
+        "Basic rate: 20% on income between Personal Allowance and £50,270.",
+        "Higher rate: 40% on income between £50,271 and £125,140.",
+        "Additional rate: 45% on income above £125,140.",
+        "ISA withdrawals are excluded from the tax calculation entirely.",
+        "The optimiser minimises combined tax by adjusting the relative SIPP draw between John and Elaine.",
+        "A binary-search algorithm iterates to find the exact gross draw that meets the target net income.",
+    ]:
+        bullet(doc, b)
+    body(doc, (
+        "Example: if John has £30,000 of guaranteed income, his SIPP drawdown is limited to "
+        "£20,270 before hitting the higher-rate band. Excess is then drawn from Elaine's SIPP "
+        "or the ISA to minimise total tax."
+    ), italic=True, colour=GREY)
+
+    # ── R5. IHT Projection ─────────────────────────────────────────────────────
+    heading1(doc, "R5. Inheritance Tax Projection")
+    body(doc, (
+        "A separate IHT tab projects the potential inheritance tax liability on the combined "
+        "estate (investment portfolio + property) across the three growth scenarios, year by year "
+        "until John's age 95."
+    ))
+    for b in [
+        "Property value projected at 3% nominal growth per year from current £1.2M.",
+        "Remaining mortgage (currently ~£350,000) reduces estate value until cleared.",
+        "Nil-Rate Band (NRB): £325,000 per person — £650,000 combined.",
+        "Residence Nil-Rate Band (RNRB): £175,000 per person — £350,000 combined — for direct descendant inheritance.",
+        "RNRB tapers by £1 per £2 of estate value above £2,000,000.",
+        "IHT is charged at 40% on estate value above the combined threshold.",
+        "SIPPs are assumed to remain outside the estate (pre-2027 rules — legislation may change).",
+        "ISAs are included in the taxable estate.",
+    ]:
+        bullet(doc, b)
+
+    # ── R6. Sections / UI ──────────────────────────────────────────────────────
+    heading1(doc, "R6. Application Sections")
+    body(doc, "The planner is divided into five sections accessible via a tab bar:")
+    sections = [
+        ("Overview",
+         "Summary dashboard. Shows total portfolio at retirement (Bear/Central/Bull), estimated exhaustion age "
+         "across scenarios, portfolio value at key ages (80, 90), and the year the portfolio is projected to "
+         "run out (if applicable). A colour-coded chart shows portfolio trajectories across all three scenarios."),
+        ("Year by Year",
+         "Detailed annual projection table. Columns: Year, Ages, Income Target, Guaranteed Income, Portfolio Draw, "
+         "Tax Paid, Net Income, Total Portfolio, per-account balances. Scrollable; highlights exhaustion year in red."),
+        ("Income Analysis",
+         "Breakdown of income sources for each year: DB pensions by name, State Pension, SIPP drawdown (John/Elaine), "
+         "ISA draw, and total tax. Useful for understanding tax efficiency over time."),
+        ("IHT Planner",
+         "Inheritance tax projection showing estate value (portfolio + property − mortgage), combined NRB/RNRB, "
+         "taxable amount, and estimated IHT bill across all three scenarios."),
+        ("Assumptions",
+         "Editable form for all model inputs. Changes apply immediately — no save/submit required. "
+         "Includes: portfolio values (auto-loaded from price_history-2.json), contribution amounts and split, "
+         "growth rate scenarios, target income, DB pension details, state pension ages, income step-down ages, "
+         "mortgage details, PCLS options, and IHT property assumptions."),
+    ]
+    for name, desc in sections:
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(5)
+        run1 = p.add_run(f"{name}:  ")
+        run1.font.bold = True; run1.font.size = Pt(10.5); run1.font.color.rgb = GOLD; run1.font.name = "Calibri"
+        run2 = p.add_run(desc)
+        run2.font.size = Pt(10); run2.font.color.rgb = DARKBLUE; run2.font.name = "Calibri"
+
+    # ── R7. Key Assumptions & Defaults ────────────────────────────────────────
+    heading1(doc, "R7. Default Assumptions")
+    body(doc, "All values are editable in the Assumptions tab. The initial defaults are:")
+    tbl = doc.add_table(rows=1, cols=3)
+    tbl.style = "Table Grid"
+    hdr = tbl.rows[0]
+    for i, h in enumerate(["Assumption", "Default Value", "Notes"]):
+        set_cell_bg(hdr.cells[i], "0a1420")
+        run = hdr.cells[i].paragraphs[0].add_run(h.upper())
+        run.font.bold = True; run.font.size = Pt(9); run.font.color.rgb = GOLD; run.font.name = "Calibri"
+    for idx, (a, v, n) in enumerate([
+        ("Retirement year",          "2031",           "March 2031, John age 63"),
+        ("Target net income",        "£60,000/year",   "Post-mortgage, post-tax, in today's money"),
+        ("Monthly contributions",    "£2,011",         "Combined; 70% John SIPP / 20% Elaine SIPP / 10% ISAs"),
+        ("Growth — Bear",            "3% real",        "After inflation"),
+        ("Growth — Central",         "5% real",        "After inflation (default view)"),
+        ("Growth — Bull",            "7% real",        "After inflation"),
+        ("Inflation rate",           "2.5%",           "Used to convert real to nominal returns"),
+        ("Longevity",                "Age 95",         "John's plan-to age"),
+        ("State pension",            "£11,502/year",   "Full new state pension (2025/26); from age 67"),
+        ("Mortgage balance",         "£250,000",       "At retirement; cleared via PCLS"),
+        ("Mortgage cost",            "£1,600/month",   "Added to income target until cleared"),
+        ("House value (IHT)",        "£1,200,000",     "Current market value; grown at 3%/year"),
+        ("PCLS use",                 "Clear mortgage", "25% tax-free lump from both SIPPs applied to mortgage"),
+        ("Income step-down age 75",  "-10%",           "Reflects lower activity and travel spend"),
+        ("Income step-down age 80",  "-15%",           "More home-based lifestyle"),
+        ("Income step-down age 85",  "-20%",           "Lower discretionary spend"),
+    ]):
+        row = tbl.add_row()
+        set_row_shading(row, "121e2b" if idx % 2 == 0 else "0f1923")
+        for i, val in enumerate([a, v, n]):
+            run = row.cells[i].paragraphs[0].add_run(val)
+            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = DARKBLUE
+
+    # ── R8. Limitations & Caveats ─────────────────────────────────────────────
+    heading1(doc, "R8. Limitations & Caveats")
+    for b in [
+        "Tax rules are based on 2025/26 UK rates with frozen thresholds — future governments may change these significantly.",
+        "SIPP legislation is changing: from April 2027 SIPPs will be included in the taxable estate for IHT purposes. The model does not yet reflect this change.",
+        "Growth rates are assumed constant per year — actual returns will be volatile.",
+        "Inflation is modelled as a flat 2.5% — actual inflation will vary.",
+        "DB pension amounts are held constant (not inflation-linked) — some schemes may provide inflation uplift.",
+        "The model does not currently account for annuity purchase, care home costs, or inter-vivos gifting strategies.",
+        "Property value projections are illustrative — regional and market variations apply.",
+        "This tool is for personal planning purposes only and does not constitute regulated financial advice.",
+    ]:
+        bullet(doc, b)
+
     # ── Footer note ────────────────────────────────────────────────────────────
     doc.add_paragraph()
     add_horizontal_rule(doc)
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = p.add_run(f"Daniells Portfolio Tracker — System Documentation v1.20 — {TODAY} — Personal & Confidential")
+    run = p.add_run(f"Daniells Portfolio & Retirement Tracker — System Documentation v1.20 — {TODAY} — Personal & Confidential")
     run.font.size = Pt(8); run.font.color.rgb = GREY; run.font.name = "Calibri"
 
     # ── Save ───────────────────────────────────────────────────────────────────
