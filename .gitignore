@@ -8,6 +8,7 @@ fetch_analysis.py
 
 # Personal documents
 *.txt
+portfolio_session_chat_*.docx
 
 # macOS
 .DS_Store
