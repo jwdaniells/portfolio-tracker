@@ -163,7 +163,7 @@ def add_artifact_table(doc, rows):
             run = cell.paragraphs[0].add_run(val)
             run.font.size = Pt(9)
             run.font.name = "Courier New" if i == 0 else "Calibri"
-            run.font.color.rgb = GOLD if i == 0 else DARKBLUE
+            run.font.color.rgb = GOLD if i == 0 else LIGHT
 
 # ══════════════════════════════════════════════════════════════════════════════
 # DIAGRAMS
@@ -406,7 +406,7 @@ def build_doc():
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = p.add_run("System Documentation")
     run.font.size  = Pt(16)
-    run.font.color.rgb = DARKBLUE
+    run.font.color.rgb = LIGHT
     run.font.name  = "Calibri"
 
     doc.add_paragraph()
@@ -507,7 +507,7 @@ def build_doc():
         set_row_shading(row, "121e2b" if idx % 2 == 0 else "0f1923")
         for i, val in enumerate([layer, tech, detail]):
             run = row.cells[i].paragraphs[0].add_run(val)
-            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = DARKBLUE
+            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = LIGHT
 
     # ── 3. Component Inventory ─────────────────────────────────────────────────
     heading1(doc, "3. Component Inventory")
@@ -609,7 +609,7 @@ def build_doc():
         run1 = p.add_run(f"{field}  ")
         run1.font.name = "Courier New"; run1.font.size = Pt(9); run1.font.color.rgb = GOLD
         run2 = p.add_run(desc)
-        run2.font.name = "Calibri"; run2.font.size = Pt(9.5); run2.font.color.rgb = DARKBLUE
+        run2.font.name = "Calibri"; run2.font.size = Pt(9.5); run2.font.color.rgb = LIGHT
 
     heading2(doc, "Key Data Rules")
     for b in [
@@ -706,7 +706,7 @@ def build_doc():
             run = row.cells[i].paragraphs[0].add_run(val)
             run.font.size = Pt(9)
             run.font.name = "Courier New" if i in (0, 2) else "Calibri"
-            run.font.color.rgb = GOLD if i == 0 else DARKBLUE
+            run.font.color.rgb = GOLD if i == 0 else LIGHT
 
     body(doc, "Note: Unit trusts return prices in pence (GBp) from Yahoo Finance. The fetch script automatically divides by 100 to convert to GBP. ETF prices on .L exchange are also returned in pence.", italic=True, colour=GREY)
 
@@ -739,7 +739,7 @@ def build_doc():
         set_row_shading(row, "121e2b" if idx % 2 == 0 else "0f1923")
         for i, val in enumerate(row_data):
             run = row.cells[i].paragraphs[0].add_run(val)
-            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = DARKBLUE
+            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = LIGHT
 
     heading2(doc, "Troubleshooting")
     for issue, fix in [
@@ -789,7 +789,7 @@ def build_doc():
     add_horizontal_rule(doc)
 
     # ── R1. Purpose & Overview ─────────────────────────────────────────────────
-    heading1(doc, "R1. Purpose & Overview")
+    heading1(doc, "1. Purpose & Overview")
     body(doc, (
         "The Retirement Planner is a standalone financial modelling tool that works alongside the "
         "Portfolio Tracker. Its purpose is to project whether the combined investment portfolio will "
@@ -810,7 +810,7 @@ def build_doc():
         bullet(doc, b)
 
     # ── R2. Architecture ───────────────────────────────────────────────────────
-    heading1(doc, "R2. Architecture & Technology")
+    heading1(doc, "2. Architecture & Technology")
     body(doc, (
         "The Retirement Planner is implemented as a React single-page application, identical in "
         "technology to the Portfolio Tracker. It is served from a separate entry point "
@@ -837,10 +837,10 @@ def build_doc():
             run = row.cells[i].paragraphs[0].add_run(val)
             run.font.size = Pt(9)
             run.font.name = "Courier New" if i == 0 else "Calibri"
-            run.font.color.rgb = GOLD if i == 0 else DARKBLUE
+            run.font.color.rgb = GOLD if i == 0 else LIGHT
 
-    # ── R3. Projection Model ───────────────────────────────────────────────────
-    heading1(doc, "R3. Financial Projection Model")
+    # ── 3. Projection Model ───────────────────────────────────────────────────
+    heading1(doc, "3. Financial Projection Model")
 
     heading2(doc, "Pre-Retirement Growth Phase (2026–2031)")
     body(doc, (
@@ -895,10 +895,10 @@ def build_doc():
         set_row_shading(row, "121e2b" if idx % 2 == 0 else "0f1923")
         for i, val in enumerate([src, owner, notes]):
             run = row.cells[i].paragraphs[0].add_run(val)
-            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = DARKBLUE
+            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = LIGHT
 
     # ── R4. Tax Engine ─────────────────────────────────────────────────────────
-    heading1(doc, "R4. UK Tax Engine")
+    heading1(doc, "4. UK Tax Engine")
     body(doc, (
         "The planner contains a built-in UK income tax engine using 2025/26 rates with "
         "frozen thresholds. It is applied independently to John and Elaine to calculate "
@@ -921,7 +921,7 @@ def build_doc():
     ), italic=True, colour=GREY)
 
     # ── R5. IHT Projection ─────────────────────────────────────────────────────
-    heading1(doc, "R5. Inheritance Tax Projection")
+    heading1(doc, "5. Inheritance Tax Projection")
     body(doc, (
         "A separate IHT tab projects the potential inheritance tax liability on the combined "
         "estate (investment portfolio + property) across the three growth scenarios, year by year "
@@ -940,7 +940,7 @@ def build_doc():
         bullet(doc, b)
 
     # ── R6. Sections / UI ──────────────────────────────────────────────────────
-    heading1(doc, "R6. Application Sections")
+    heading1(doc, "6. Application Sections")
     body(doc, "The planner is divided into five sections accessible via a tab bar:")
     sections = [
         ("Overview",
@@ -971,7 +971,7 @@ def build_doc():
         run2.font.size = Pt(10); run2.font.color.rgb = DARKBLUE; run2.font.name = "Calibri"
 
     # ── R7. Key Assumptions & Defaults ────────────────────────────────────────
-    heading1(doc, "R7. Default Assumptions")
+    heading1(doc, "7. Default Assumptions")
     body(doc, "All values are editable in the Assumptions tab. The initial defaults are:")
     tbl = doc.add_table(rows=1, cols=3)
     tbl.style = "Table Grid"
@@ -1002,10 +1002,10 @@ def build_doc():
         set_row_shading(row, "121e2b" if idx % 2 == 0 else "0f1923")
         for i, val in enumerate([a, v, n]):
             run = row.cells[i].paragraphs[0].add_run(val)
-            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = DARKBLUE
+            run.font.size = Pt(9); run.font.name = "Calibri"; run.font.color.rgb = LIGHT
 
-    # ── R8. Limitations & Caveats ─────────────────────────────────────────────
-    heading1(doc, "R8. Limitations & Caveats")
+    # ── 8. Limitations & Caveats ─────────────────────────────────────────────
+    heading1(doc, "8. Limitations & Caveats")
     for b in [
         "Tax rules are based on 2025/26 UK rates with frozen thresholds — future governments may change these significantly.",
         "SIPP legislation is changing: from April 2027 SIPPs will be included in the taxable estate for IHT purposes. The model does not yet reflect this change.",
