@@ -251,6 +251,45 @@ def main(pension_value=None):
     with open(JSON_PATH, "w") as f:
         json.dump(d, f, indent=2)
 
+    # ── Per-account totals & since-last ──────────────────────────────────────
+    prev_total = None
+    prev_date_display = d["meta"].get("prevDateDisplay", "")
+    if d["meta"].get("prevDate"):
+        prev_hist = [e for e in d["history"] if e["date"] == d["meta"]["prevDate"]]
+        if prev_hist and "prices" in prev_hist[0]:
+            prev_snap = prev_hist[0]["prices"]
+            # Re-compute prev total from old snapshot prices
+            prev_total = 0
+            for acc2 in d["accounts"]:
+                for h2 in acc2["holdings"]:
+                    t2 = h2.get("ticker")
+                    key2 = f"{acc2['id']}|{t2}" if t2 else acc2["id"]
+                    if key2 in prev_snap:
+                        if h2.get("units") is not None:
+                            prev_total += h2["units"] * prev_snap[key2]
+                        else:
+                            prev_total += prev_snap[key2]
+
+    account_lines = []
+    for acc2 in d["accounts"]:
+        acc_val = sum(hval(h2) for h2 in acc2["holdings"])
+        if prev_total is not None:
+            prev_hist2 = [e for e in d["history"] if e["date"] == d["meta"]["prevDate"]]
+            prev_snap2 = prev_hist2[0].get("prices", {}) if prev_hist2 else {}
+            acc_prev = 0
+            for h2 in acc2["holdings"]:
+                t2 = h2.get("ticker")
+                key2 = f"{acc2['id']}|{t2}" if t2 else acc2["id"]
+                if key2 in prev_snap2:
+                    acc_prev += h2["units"] * prev_snap2[key2] if h2.get("units") is not None else prev_snap2[key2]
+            chg = acc_val - acc_prev
+            sign = "+" if chg >= 0 else "-"
+            account_lines.append(f"  {acc2.get('name','Account'):30}  £{acc_val:>10,.0f}  ({sign}£{abs(chg):,.0f})")
+        else:
+            account_lines.append(f"  {acc2.get('name','Account'):30}  £{acc_val:>10,.0f}")
+
+    overall_change = f"+£{total_value - prev_total:,.0f}" if prev_total is not None and total_value >= prev_total else (f"-£{prev_total - total_value:,.0f}" if prev_total is not None else "n/a")
+
     print(f"\n{'─'*60}")
     print(f"  {'✓':3} {updated} holdings updated   Total: £{total_value:,.0f}")
     print(f"  {'✓':3} History: {len(d['history'])} entries  (latest: {TODAY})")
@@ -258,6 +297,18 @@ def main(pension_value=None):
         print(f"  {'⚠':3} Not fetched: {', '.join(failed)}")
     print(f"  {'✓':3} Saved → {JSON_PATH.name}")
     print(f"{'─'*60}\n")
+
+    # Structured summary for GitHub Actions email (parse via marker)
+    print("EMAIL_SUMMARY_START")
+    print(f"Date: {TODAY_DISPLAY}")
+    print(f"Total Portfolio: £{total_value:,.0f}  (since {prev_date_display or 'last'}: {overall_change})")
+    print("")
+    print("Account Breakdown (since last update):")
+    for line in account_lines:
+        print(line)
+    if failed:
+        print(f"\nNot updated: {', '.join(failed)}")
+    print("EMAIL_SUMMARY_END")
 
 
 if __name__ == "__main__":

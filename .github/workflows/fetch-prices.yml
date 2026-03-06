@@ -33,6 +33,16 @@ jobs:
         run: |
           python fetch_prices.py 2>&1 | tee /tmp/fetch_output.txt
           echo "total=$(grep -o 'Total: £[0-9,]*' /tmp/fetch_output.txt | tail -1)" >> $GITHUB_OUTPUT
+          # Extract the structured email summary block
+          python3 - << 'PYEOF'
+          import re
+          txt = open('/tmp/fetch_output.txt').read()
+          m = re.search(r'EMAIL_SUMMARY_START\n(.*?)EMAIL_SUMMARY_END', txt, re.DOTALL)
+          summary = m.group(1).strip() if m else 'See Actions log for details.'
+          with open('/tmp/email_summary.txt', 'w') as f:
+              f.write(summary)
+          PYEOF
+          echo "summary_file=/tmp/email_summary.txt" >> $GITHUB_OUTPUT
 
       - name: Commit and push updated data
         run: |
@@ -43,6 +53,13 @@ jobs:
           git diff --cached --quiet || git commit -m "Auto-update prices $(date +'%d %b %Y')"
           git push
 
+      - name: Read email summary
+        id: summary
+        if: success()
+        run: |
+          echo "" >> /tmp/email_summary.txt
+          echo "View your tracker: https://jwdaniells.github.io/portfolio-tracker/" >> /tmp/email_summary.txt
+
       - name: Send success email
         if: success()
         uses: dawidd6/action-send-mail@v3
@@ -52,18 +69,11 @@ jobs:
           secure: true
           username: jdaniells@yahoo.co.uk
           password: ${{ secrets.YAHOO_APP_PASSWORD }}
-          subject: "Portfolio Tracker updated (${{ steps.fetch.outputs.total || 'see tracker' }})"
+          subject: "✅ Portfolio updated — ${{ steps.fetch.outputs.total }}"
           to: jdaniells@yahoo.co.uk
           from: Portfolio Tracker <jdaniells@yahoo.co.uk>
-          body: |
-            Portfolio prices fetched and published successfully.
-
-            ${{ steps.fetch.outputs.total }}
-
-            View your tracker:
-            https://jwdaniells.github.io/portfolio-tracker/
-
-            Run date: ${{ github.run_id }} — triggered by schedule
+          body_path: /tmp/email_summary.txt
+          convert_markdown: false
 
       - name: Send failure email
         if: failure()
