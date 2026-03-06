@@ -424,10 +424,15 @@ export default function RetirementPlanner() {
           mortgageRemaining = Math.round(interestOnlyPortion + cfg.mortgageRepaymentPortion - repaid);
         }
 
-        // Portfolio: interpolate growth from current to retirement (simple compound)
-        const totalPortfolioNow = cfg.johnSipp + cfg.elaineSipp + cfg.johnIsa + cfg.elaineIsa + cfg.lsegPension;
+        // Portfolio: split SIPP and ISA — apply 2027 SIPP IHT rule
+        // From 6 April 2027 SIPPs form part of the taxable estate; before that date they are outside.
+        const sippNow = cfg.johnSipp + cfg.elaineSipp + cfg.lsegPension;
+        const isaNow  = cfg.johnIsa + cfg.elaineIsa;
         const nomRate = 1 + (scName === "bear" ? cfg.scenarioBear : scName === "central" ? cfg.scenarioCentral : cfg.scenarioBull) + cfg.inflationRate;
-        const portfolioVal = Math.round(totalPortfolioNow * Math.pow(nomRate, yearsFromNow));
+        const sippVal = Math.round(sippNow * Math.pow(nomRate, yearsFromNow));
+        const isaVal  = Math.round(isaNow  * Math.pow(nomRate, yearsFromNow));
+        const sippsInEstate = (johnBirthYear + age) >= 2027;
+        const portfolioVal  = sippsInEstate ? sippVal + isaVal : isaVal;
 
         const grossEstate = portfolioVal + houseVal;
         const netEstate = grossEstate - mortgageRemaining;
@@ -450,6 +455,9 @@ export default function RetirementPlanner() {
           houseValue: houseVal,
           mortgage: mortgageRemaining,
           portfolioValue: portfolioVal,
+          sippValue: sippVal,
+          isaValue: isaVal,
+          sippsInEstate,
           grossEstate,
           netEstate,
           combinedNrb,
@@ -475,7 +483,13 @@ export default function RetirementPlanner() {
           mortgageRemaining = Math.round(interestOnlyPortion + cfg.mortgageRepaymentPortion - repaid);
         }
 
-        const grossEstate = py.totalPortfolio + houseVal;
+        // From 6 April 2027 SIPPs are in the taxable estate
+        const sippValPost = py.johnSipp + py.elaineSipp;
+        const isaValPost  = py.johnIsa + py.elaineIsa;
+        const sippsInEstatePost = py.year >= 2027;
+        const estatePortfolio = sippsInEstatePost ? py.totalPortfolio : isaValPost;
+
+        const grossEstate = estatePortfolio + houseVal;
         const netEstate = grossEstate - mortgageRemaining;
 
         const combinedNrb = cfg.ihtNrb * 2;
@@ -493,7 +507,10 @@ export default function RetirementPlanner() {
           johnAge: py.johnAge,
           houseValue: houseVal,
           mortgage: mortgageRemaining,
-          portfolioValue: py.totalPortfolio,
+          portfolioValue: estatePortfolio,
+          sippValue: sippValPost,
+          isaValue: isaValPost,
+          sippsInEstate: sippsInEstatePost,
           grossEstate,
           netEstate,
           combinedNrb,
@@ -1190,8 +1207,8 @@ export default function RetirementPlanner() {
           const netPath = yrs.map((y, i) => `${i === 0 ? "M" : "L"}${toX(i)},${toY(y.netEstate)}`).join(" ");
           const allowancePath = yrs.map((y, i) => `${i === 0 ? "M" : "L"}${toX(i)},${toY(y.totalAllowance)}`).join(" ");
 
-          // Mortgage line
-          const mortgageYrs = yrs.filter(y => y.mortgage > 0);
+          // Find the index where SIPPs enter the estate (first year >= 2027)
+          const sipp2027Idx = yrs.findIndex(y => y.sippsInEstate);
 
           return (
             <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block" }}>
@@ -1210,6 +1227,14 @@ export default function RetirementPlanner() {
               <path d={grossPath} fill="none" stroke="#e8dcc8" strokeWidth="1" strokeDasharray="4,4" strokeOpacity="0.4" />
               {/* Allowance threshold line */}
               <path d={allowancePath} fill="none" stroke="#70AD47" strokeWidth="1.5" strokeDasharray="6,3" strokeOpacity="0.7" />
+              {/* 2027 SIPP rule transition marker */}
+              {sipp2027Idx >= 0 && (
+                <g>
+                  <line x1={toX(sipp2027Idx)} y1={P.t} x2={toX(sipp2027Idx)} y2={H - P.b} stroke="#e07060" strokeWidth="1.5" strokeDasharray="5,3" strokeOpacity="0.8" />
+                  <text x={toX(sipp2027Idx) + 4} y={P.t + 12} fontSize="8" fill="#e07060">SIPPs in estate</text>
+                  <text x={toX(sipp2027Idx) + 4} y={P.t + 22} fontSize="8" fill="#e07060">(Apr 2027)</text>
+                </g>
+              )}
               {/* X labels */}
               {yrs.map((y, i) => {
                 const step = Math.max(1, Math.floor(yrs.length / 14));
@@ -1226,6 +1251,8 @@ export default function RetirementPlanner() {
               <text x={P.l + 134} y={H - 2} fontSize="9" fill="#70AD47">IHT Threshold</text>
               <rect x={P.l + 240} y={H - 10} width={12} height={8} fill="#4472C4" fillOpacity="0.3" />
               <text x={P.l + 256} y={H - 2} fontSize="9" fill="#4472C4">House Value</text>
+              <line x1={P.l + 340} y1={H - 5} x2={P.l + 360} y2={H - 5} stroke="#e07060" strokeWidth="1.5" strokeDasharray="5,3" />
+              <text x={P.l + 364} y={H - 2} fontSize="9" fill="#e07060">SIPPs join estate (2027)</text>
             </svg>
           );
         };
@@ -1246,6 +1273,8 @@ export default function RetirementPlanner() {
           const ticks = [0, Math.round(maxV / 4), Math.round(maxV / 2), Math.round(maxV * 3 / 4), maxV];
           const fmtAxis = v => v >= 1000000 ? (v / 1000000).toFixed(1) + "m" : (v / 1000).toFixed(0) + "k";
 
+          const sipp2027IdxIht = ihtCentral.years.findIndex(y => y.sippsInEstate);
+
           return (
             <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block" }}>
               {ticks.map((v, i) => (
@@ -1260,6 +1289,10 @@ export default function RetirementPlanner() {
                   <path key={sc.key} d={pathD} fill="none" stroke={sc.color} strokeWidth={sc.key === scenario ? 2.5 : 1} strokeOpacity={sc.key === scenario ? 1 : 0.4} />
                 );
               })}
+              {/* 2027 SIPP rule marker */}
+              {sipp2027IdxIht >= 0 && (
+                <line x1={toX(sipp2027IdxIht)} y1={P.t} x2={toX(sipp2027IdxIht)} y2={H - P.b} stroke="#e07060" strokeWidth="1.5" strokeDasharray="5,3" strokeOpacity="0.7" />
+              )}
               {ihtCentral.years.map((y, i) => {
                 const step = Math.max(1, Math.floor(maxLen / 14));
                 return (i % step === 0 || i === maxLen - 1) ? (
@@ -1301,6 +1334,9 @@ export default function RetirementPlanner() {
                 </div>
                 <div style={{ fontSize: 12, color: "#6a7d8f", marginTop: 6 }}>
                   Estate includes portfolio + property ({fmt(cfg.houseValue)} today, {pct(cfg.houseGrowthRate)} growth) · Mortgage {fmt(cfg.mortgageNow)} clearing at {cfg.mortgageClearAgeIHT} · Combined allowance up to {fmt((cfg.ihtNrb + cfg.ihtRnrb) * 2)}
+                </div>
+                <div style={{ fontSize: 11, color: "#e07060", marginTop: 8, padding: "6px 10px", background: "#e0706012", border: "1px solid #e0706030", borderRadius: 3 }}>
+                  ⚠ SIPP legislation change (Budget 2024): From 6 April 2027, defined contribution pension pots will form part of the taxable estate. Projections reflect this — SIPPs are excluded from the estate before 2027 and included from 2027 onwards.
                 </div>
               </div>
             </div>
@@ -1424,7 +1460,8 @@ export default function RetirementPlanner() {
                 <tr>
                   <th style={S.th}>Year</th>
                   <th style={S.th}>Age</th>
-                  <th style={S.thR}>Portfolio</th>
+                  <th style={S.thR}>Portfolio (estate)</th>
+                  <th style={S.thR}>SIPP (excl. pre-2027)</th>
                   <th style={S.thR}>House Value</th>
                   <th style={S.thR}>Mortgage</th>
                   <th style={S.thR}>Net Estate</th>
@@ -1437,13 +1474,22 @@ export default function RetirementPlanner() {
               <tbody>
                 {ihtData.years.map(y => (
                   <tr key={y.year}
-                    style={y.johnAge === peakIht?.johnAge ? { background: "#3d1e1e44" } : {}}
+                    style={y.johnAge === peakIht?.johnAge ? { background: "#3d1e1e44" } : y.year === 2027 ? { background: "#e0706010", borderTop: "1px solid #e0706040" } : {}}
                     onMouseEnter={e => e.currentTarget.style.background = "#1e3040"}
-                    onMouseLeave={e => e.currentTarget.style.background = y.johnAge === peakIht?.johnAge ? "#3d1e1e44" : ""}
+                    onMouseLeave={e => e.currentTarget.style.background = y.johnAge === peakIht?.johnAge ? "#3d1e1e44" : y.year === 2027 ? "#e0706010" : ""}
                   >
-                    <td style={{ ...S.td, fontWeight: 600 }}>{y.year}</td>
+                    <td style={{ ...S.td, fontWeight: 600 }}>
+                      {y.year}
+                      {y.year === 2027 && <span style={{ fontSize: 9, color: "#e07060", marginLeft: 4 }}>▲SIPP</span>}
+                    </td>
                     <td style={S.td}>{y.johnAge}</td>
-                    <td style={S.tdR}>{fmt(y.portfolioValue)}</td>
+                    <td style={S.tdR}>
+                      {fmt(y.portfolioValue)}
+                      <div style={{ fontSize: 9, color: "#6a7d8f" }}>{y.sippsInEstate ? "ISA+SIPP" : "ISA only"}</div>
+                    </td>
+                    <td style={{ ...S.tdR, color: y.sippsInEstate ? "#e8dcc8" : "#3a5070" }}>
+                      {y.sippsInEstate ? fmt(y.sippValue) : <span style={{ color: "#3a5070" }}>excl. {fmt(y.sippValue)}</span>}
+                    </td>
                     <td style={{ ...S.tdR, color: "#4472C4" }}>{fmt(y.houseValue)}</td>
                     <td style={{ ...S.tdR, color: y.mortgage > 0 ? "#e07060" : "#70AD47" }}>{y.mortgage > 0 ? `-${fmt(y.mortgage)}` : "—"}</td>
                     <td style={{ ...S.tdR, fontWeight: 600 }}>{fmt(y.netEstate)}</td>

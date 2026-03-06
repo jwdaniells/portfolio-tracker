@@ -934,7 +934,7 @@ def build_doc():
         "Residence Nil-Rate Band (RNRB): £175,000 per person — £350,000 combined — for direct descendant inheritance.",
         "RNRB tapers by £1 per £2 of estate value above £2,000,000.",
         "IHT is charged at 40% on estate value above the combined threshold.",
-        "SIPPs are assumed to remain outside the estate (pre-2027 rules — legislation may change).",
+        "SIPPs are excluded from the taxable estate before 6 April 2027 (current rules). From 2027, defined contribution pension pots enter the estate (Budget 2024 change) — the model reflects this automatically.",
         "ISAs are included in the taxable estate.",
     ]:
         bullet(doc, b)
@@ -1008,7 +1008,7 @@ def build_doc():
     heading1(doc, "8. Limitations & Caveats")
     for b in [
         "Tax rules are based on 2025/26 UK rates with frozen thresholds — future governments may change these significantly.",
-        "SIPP legislation is changing: from April 2027 SIPPs will be included in the taxable estate for IHT purposes. The model does not yet reflect this change.",
+        "SIPP legislation change (Budget 2024): From April 2027, SIPPs enter the taxable estate. The model already reflects this — SIPPs are excluded from the estate before 2027 and included from 2027 onwards. A dashed vertical marker on the IHT charts shows the transition point.",
         "Growth rates are assumed constant per year — actual returns will be volatile.",
         "Inflation is modelled as a flat 2.5% — actual inflation will vary.",
         "DB pension amounts are held constant (not inflation-linked) — some schemes may provide inflation uplift.",
