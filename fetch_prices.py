@@ -142,6 +142,9 @@ def main(pension_value=None):
 
     print(f"\n{'='*60}\n  Portfolio Tracker — Price Fetch  {TODAY}\n{'='*60}\n")
 
+    # Only roll prevPrice forward on the first fetch of a new day
+    is_new_day = d["meta"].get("fetchDate") != TODAY
+
     fetched = {}
     for ticker, sym in YAHOO_SYMBOLS.items():
         price, pdate = fetch_price(ticker, sym, isin=ISINS.get(ticker))
@@ -161,7 +164,8 @@ def main(pension_value=None):
 
             if h.get("pensionTracking"):
                 if pension_value is not None:
-                    h["prevManualValue"] = h.get("manualValue") or h.get("prevManualValue", 13120)
+                    if is_new_day:
+                        h["prevManualValue"] = h.get("manualValue") or h.get("prevManualValue", 13120)
                     h["manualValue"]     = float(pension_value)
                     h["priceDate"]       = TODAY
                     updated += 1
@@ -170,7 +174,8 @@ def main(pension_value=None):
 
             if ticker and ticker in fetched:
                 new_price, price_date = fetched[ticker]
-                h["prevPrice"]   = h.get("price")
+                if is_new_day:
+                    h["prevPrice"] = h.get("price")
                 h["price"]       = new_price
                 h["priceDate"]   = price_date
                 h["fetchStatus"] = {"ok": True, "source": f"Yahoo Finance {TODAY}"}
@@ -209,7 +214,8 @@ def main(pension_value=None):
             cid = coin["id"].upper()   # btc → BTC
             if cid in crypto_fetched:
                 gbp, pdate, prev = crypto_fetched[cid]
-                coin["prevPrice"] = coin.get("price")   # roll current → prev
+                if is_new_day:
+                    coin["prevPrice"] = coin.get("price")   # roll current → prev
                 coin["price"]     = gbp
                 coin["priceDate"] = pdate
                 if prev is not None and coin["prevPrice"] is None:
