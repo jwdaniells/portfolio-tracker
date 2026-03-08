@@ -10,13 +10,15 @@ const TRACKER_URL = "https://jwdaniells.github.io/portfolio-tracker/"
 
 // ── Colours (match the portfolio tracker UI) ──────────────────────────────────
 const C = {
-  bg:    new Color("#0d1b2a"),
-  gold:  new Color("#c9a84c"),
-  light: new Color("#e8dcc8"),
-  muted: new Color("#6a7d8f"),
-  green: new Color("#70AD47"),
-  red:   new Color("#e07060"),
-  dim:   new Color("#2a3d50"),
+  bg:        new Color("#0d1b2a"),
+  gold:      new Color("#c9a84c"),
+  light:     new Color("#e8dcc8"),
+  muted:     new Color("#6a7d8f"),
+  green:     new Color("#70AD47"),
+  red:       new Color("#e07060"),
+  dim:       new Color("#2a3d50"),
+  greenFill: new Color("#70AD47", 0.15),
+  redFill:   new Color("#e07060", 0.15),
 }
 
 // ── Fetch JSON from GitHub ────────────────────────────────────────────────────
@@ -40,11 +42,11 @@ function calc(d) {
       let val, prevVal
 
       if (h.pensionTracking) {
-        val      = h.manualValue      || 0
-        prevVal  = h.prevManualValue  || val
+        val     = h.manualValue     || 0
+        prevVal = h.prevManualValue || val
       } else if (h.price != null && h.units != null) {
-        val      = h.units * h.price
-        prevVal  = h.prevPrice != null ? h.units * h.prevPrice : val
+        val     = h.units * h.price
+        prevVal = h.prevPrice != null ? h.units * h.prevPrice : val
       } else {
         continue
       }
@@ -54,11 +56,7 @@ function calc(d) {
 
       const change = val - prevVal
       if (h.ticker && Math.abs(change) > 0.5) {
-        movers.push({
-          ticker: h.ticker,
-          change,
-          pct: prevVal > 0 ? change / prevVal : 0,
-        })
+        movers.push({ ticker: h.ticker, change, pct: prevVal > 0 ? change / prevVal : 0 })
       }
     }
   }
@@ -74,6 +72,54 @@ function calc(d) {
   }
 }
 
+// ── Sparkline (DrawContext) ───────────────────────────────────────────────────
+function buildSparkline(history, w, h, up) {
+  const dc = new DrawContext()
+  dc.size = new Size(w, h)
+  dc.opaque = false
+  dc.respectScreenScale = true
+
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - 30)
+  const pts = (history || []).filter(p => new Date(p.date) >= cutoff)
+  if (pts.length < 2) return dc.getImage()
+
+  const vals = pts.map(p => p.totalValue)
+  const minV = Math.min(...vals)
+  const maxV = Math.max(...vals)
+  const range = maxV - minV || 1
+  const pad = 2
+
+  const toX = i => (i / (pts.length - 1)) * w
+  const toY = v => h - pad - ((v - minV) / range) * (h - pad * 2)
+
+  // Area fill
+  const area = new Path()
+  pts.forEach((p, i) => {
+    const x = toX(i), y = toY(p.totalValue)
+    i === 0 ? area.move(new Point(x, y)) : area.addLine(new Point(x, y))
+  })
+  area.addLine(new Point(w, h))
+  area.addLine(new Point(0, h))
+  area.closeSubpath()
+  dc.setFillColor(up ? C.greenFill : C.redFill)
+  dc.addPath(area)
+  dc.fillPath()
+
+  // Line
+  const line = new Path()
+  pts.forEach((p, i) => {
+    const x = toX(i), y = toY(p.totalValue)
+    i === 0 ? line.move(new Point(x, y)) : line.addLine(new Point(x, y))
+  })
+  dc.setStrokeColor(up ? C.green : C.red)
+  dc.setLineWidth(1.5)
+  dc.addPath(line)
+  dc.strokePath()
+
+  return dc.getImage()
+}
+
 // ── Formatters ────────────────────────────────────────────────────────────────
 function fmt(n) {
   const a = Math.abs(n)
@@ -83,7 +129,6 @@ function fmt(n) {
 }
 
 function fmtFull(n) {
-  // Manual thousand-separator (safe in all JS engines)
   const abs = Math.round(Math.abs(n))
   const s   = String(abs).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
   return (n >= 0 ? "+£" : "−£") + s
@@ -93,28 +138,29 @@ function fmtPct(p) {
   return (p >= 0 ? "+" : "") + (p * 100).toFixed(2) + "%"
 }
 
-function fmtTime(iso) {
+function fmtDateTime(iso) {
   if (!iso) return "—"
   try {
-    return new Date(iso).toLocaleTimeString("en-GB", {
-      hour: "2-digit", minute: "2-digit", timeZone: "Europe/London"
-    })
+    const d    = new Date(iso)
+    const date = d.toLocaleDateString("en-GB",    { day: "numeric", month: "short", timeZone: "Europe/London" })
+    const time = d.toLocaleTimeString("en-GB",    { hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" })
+    return date + " · " + time
   } catch (e) { return "—" }
 }
 
 // ── Build the widget ──────────────────────────────────────────────────────────
 async function buildWidget(d) {
-  const w = new ListWidget()
-  w.backgroundColor = C.bg
-  w.url = TRACKER_URL
-  w.setPadding(12, 14, 10, 14)
+  const widget = new ListWidget()
+  widget.backgroundColor = C.bg
+  widget.url = TRACKER_URL
+  widget.setPadding(12, 14, 10, 14)
 
   // Error state
   if (!d) {
-    const t = w.addText("⚠️ Could not load portfolio data")
+    const t = widget.addText("⚠️ Could not load portfolio data")
     t.textColor = C.red
     t.font = Font.systemFont(12)
-    return w
+    return widget
   }
 
   const { total, change, pct, movers } = calc(d)
@@ -123,8 +169,8 @@ async function buildWidget(d) {
   const col   = up ? C.green : C.red
   const arrow = up ? "▲" : "▼"
 
-  // ── Header: label + fetch time ─────────────────────────────────────────────
-  const hdr = w.addStack()
+  // ── Header: label + date·time ──────────────────────────────────────────────
+  const hdr = widget.addStack()
   hdr.layoutHorizontally()
   hdr.centerAlignContent()
 
@@ -134,28 +180,28 @@ async function buildWidget(d) {
 
   hdr.addSpacer()
 
-  const ts = hdr.addText("as at " + fmtTime(meta.fetchTimestamp))
+  const ts = hdr.addText(fmtDateTime(meta.fetchTimestamp))
   ts.textColor = C.dim
   ts.font = Font.systemFont(8)
 
-  w.addSpacer(4)
+  widget.addSpacer(3)
 
-  // ── Total value (large) ────────────────────────────────────────────────────
-  const tv = w.addText(fmt(total))
+  // ── Total value ────────────────────────────────────────────────────────────
+  const tv = widget.addText(fmt(total))
   tv.textColor = C.gold
-  tv.font = Font.boldSystemFont(26)
+  tv.font = Font.boldSystemFont(24)
   tv.minimumScaleFactor = 0.6
 
-  w.addSpacer(2)
+  widget.addSpacer(2)
 
-  // ── Change since last fetch day ────────────────────────────────────────────
-  const cr = w.addStack()
+  // ── Change row (green/red) ─────────────────────────────────────────────────
+  const cr = widget.addStack()
   cr.layoutHorizontally()
   cr.centerAlignContent()
 
   const ct = cr.addText(arrow + " " + fmtFull(change) + "   " + fmtPct(pct))
   ct.textColor = col
-  ct.font = Font.boldSystemFont(12)
+  ct.font = Font.boldSystemFont(11)
   ct.minimumScaleFactor = 0.7
 
   cr.addSpacer()
@@ -164,54 +210,65 @@ async function buildWidget(d) {
   cl.textColor = C.muted
   cl.font = Font.systemFont(9)
 
-  w.addSpacer(8)
+  widget.addSpacer(5)
 
-  // ── Top movers label ───────────────────────────────────────────────────────
-  const ml = w.addText("TOP MOVERS")
+  // ── Sparkline (last 30 days) ───────────────────────────────────────────────
+  const spark = buildSparkline(d.history || [], 300, 30, up)
+  const sparkEl = widget.addImage(spark)
+  sparkEl.imageSize = new Size(300, 30)
+  sparkEl.resizable = false
+
+  widget.addSpacer(4)
+
+  // ── Top movers (4 in a 2×2 grid) ──────────────────────────────────────────
+  const ml = widget.addText("TOP MOVERS")
   ml.textColor = C.muted
   ml.font = Font.boldSystemFont(8)
 
-  w.addSpacer(4)
+  widget.addSpacer(3)
 
-  // ── Up to 3 movers ─────────────────────────────────────────────────────────
-  const top = movers.slice(0, 3)
-
+  const top = movers.slice(0, 4)
   if (top.length === 0) {
-    const nm = w.addText("No movement data yet")
+    const nm = widget.addText("No movement data yet")
     nm.textColor = C.dim
     nm.font = Font.systemFont(10)
   }
 
-  for (const m of top) {
-    const row = w.addStack()
+  // Render in pairs (2 per row)
+  for (let i = 0; i < top.length; i += 2) {
+    const row = widget.addStack()
     row.layoutHorizontally()
     row.centerAlignContent()
 
-    const mc = m.change >= 0 ? C.green : C.red
-    const ma = m.change >= 0 ? "▲" : "▼"
+    for (let j = i; j < Math.min(i + 2, top.length); j++) {
+      const m  = top[j]
+      const mc = m.change >= 0 ? C.green : C.red
+      const ma = m.change >= 0 ? "▲" : "▼"
 
-    const tk = row.addText(m.ticker)
-    tk.textColor = C.light
-    tk.font = Font.boldSystemFont(11)
+      const cell = row.addStack()
+      cell.layoutHorizontally()
+      cell.centerAlignContent()
 
-    row.addSpacer()
+      const tk = cell.addText(m.ticker)
+      tk.textColor = C.light
+      tk.font = Font.boldSystemFont(9)
 
-    const mv = row.addText(ma + " " + fmt(Math.abs(m.change)) + "   " + fmtPct(m.pct))
-    mv.textColor = mc
-    mv.font = Font.systemFont(11)
-    mv.minimumScaleFactor = 0.8
+      cell.addSpacer(3)
 
-    w.addSpacer(3)
+      const mv = cell.addText(ma + " " + fmt(Math.abs(m.change)) + " " + fmtPct(m.pct))
+      mv.textColor = mc
+      mv.font = Font.systemFont(9)
+      mv.minimumScaleFactor = 0.7
+
+      if (j === i && top.length > i + 1) row.addSpacer() // spacer between the two cells
+    }
+
+    widget.addSpacer(3)
   }
 
-  w.addSpacer()
+  widget.addSpacer()
 
-  // ── Footer: fetch date ─────────────────────────────────────────────────────
-  const ft = w.addText(meta.fetchDateDisplay || "")
-  ft.textColor = C.dim
-  ft.font = Font.systemFont(8)
-
-  return w
+  return widget
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
@@ -221,7 +278,6 @@ const widget = await buildWidget(data)
 if (config.runsInWidget) {
   Script.setWidget(widget)
 } else {
-  // Preview when run inside the Scriptable app
   await widget.presentMedium()
 }
 

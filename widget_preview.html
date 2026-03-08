@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Widget Preview — Daniells Portfolio</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #111827;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+    gap: 20px;
+  }
+  .label {
+    color: #4a6080;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  /* Medium widget: 329×155pt — shown at 2× */
+  .widget {
+    background: #0d1b2a;
+    border-radius: 22px;
+    width: 329px;
+    height: 155px;
+    padding: 12px 14px 10px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  .row { display: flex; align-items: center; justify-content: space-between; }
+  .muted  { color: #6a7d8f; }
+  .dim    { color: #2a3d50; }
+  .gold   { color: #c9a84c; }
+  .light  { color: #e8dcc8; }
+  .green  { color: #70AD47; }
+  .red    { color: #e07060; }
+
+  .header-label { font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+  .header-time  { font-size: 8px; }
+  .total-value  { font-size: 24px; font-weight: 700; line-height: 1.1; margin: 3px 0 2px; }
+  .change-row   { font-size: 11px; font-weight: 700; }
+  .vs-label     { font-size: 9px; }
+  .section-label{ font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin: 4px 0 3px; }
+  .movers-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; }
+  .mover-cell   { display: flex; justify-content: space-between; align-items: center; }
+  .mover-ticker { font-size: 9px; font-weight: 700; color: #e8dcc8; }
+  .mover-val    { font-size: 9px; }
+
+  canvas { display: block; width: 100%; height: 30px; margin: 5px 0 0; }
+
+  .error { color: #e07060; font-size: 12px; text-align: center; }
+  #status { color: #4a6080; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<div class="label">iOS Medium Widget Preview</div>
+
+<div class="widget" id="widget">
+  <div style="color:#6a7d8f;font-size:10px;text-align:center;margin:auto">Loading…</div>
+</div>
+
+<div id="status">Fetching data from GitHub…</div>
+
+<script>
+const JSON_URL = "http://localhost:8765/price_history-2.json"
+
+function fmt(n) {
+  const a = Math.abs(n)
+  if (a >= 1e6) return "£" + (n/1e6).toFixed(3) + "m"
+  if (a >= 1e3) return "£" + (n/1e3).toFixed(1) + "k"
+  return "£" + Math.round(n)
+}
+function fmtFull(n) {
+  const s = String(Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g,",")
+  return (n >= 0 ? "+£" : "−£") + s
+}
+function fmtPct(p) {
+  return (p >= 0 ? "+" : "") + (p*100).toFixed(2) + "%"
+}
+function fmtDateTime(iso) {
+  if (!iso) return "—"
+  const d = new Date(iso)
+  const date = d.toLocaleDateString("en-GB", { day:"numeric", month:"short", timeZone:"Europe/London" })
+  const time = d.toLocaleTimeString("en-GB", { hour:"2-digit", minute:"2-digit", timeZone:"Europe/London" })
+  return date + " · " + time
+}
+
+function calc(d) {
+  let total = 0, prevTotal = 0
+  const movers = []
+  for (const acc of d.accounts || []) {
+    for (const h of acc.holdings || []) {
+      let val, prevVal
+      if (h.pensionTracking) {
+        val = h.manualValue || 0; prevVal = h.prevManualValue || val
+      } else if (h.price != null && h.units != null) {
+        val = h.units * h.price; prevVal = h.prevPrice != null ? h.units * h.prevPrice : val
+      } else continue
+      total += val; prevTotal += prevVal
+      const change = val - prevVal
+      if (h.ticker && Math.abs(change) > 0.5) {
+        movers.push({ ticker: h.ticker, change, pct: prevVal > 0 ? change/prevVal : 0 })
+      }
+    }
+  }
+  movers.sort((a,b) => Math.abs(b.change) - Math.abs(a.change))
+  return { total, change: total-prevTotal, pct: prevTotal>0?(total-prevTotal)/prevTotal:0, movers }
+}
+
+function drawSparkline(canvas, history, up) {
+  const ctx = canvas.getContext("2d")
+  const W = canvas.width, H = canvas.height
+  ctx.clearRect(0,0,W,H)
+
+  const now = new Date()
+  const cutoff = new Date(now); cutoff.setDate(cutoff.getDate()-30)
+  const pts = (history||[]).filter(p => new Date(p.date) >= cutoff)
+  if (pts.length < 2) return
+
+  const vals = pts.map(p => p.totalValue)
+  const minV = Math.min(...vals), maxV = Math.max(...vals)
+  const range = maxV - minV || 1
+  const pad = 2
+  const col = up ? "#70AD47" : "#e07060"
+
+  const toX = i => (i/(pts.length-1)) * W
+  const toY = v => H - pad - ((v-minV)/range) * (H - pad*2)
+
+  // Area fill
+  ctx.beginPath()
+  pts.forEach((p,i) => {
+    const x = toX(i), y = toY(p.totalValue)
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y)
+  })
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath()
+  ctx.fillStyle = up ? "rgba(112,173,71,0.15)" : "rgba(224,112,96,0.15)"
+  ctx.fill()
+
+  // Line
+  ctx.beginPath()
+  pts.forEach((p,i) => {
+    const x = toX(i), y = toY(p.totalValue)
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y)
+  })
+  ctx.strokeStyle = col
+  ctx.lineWidth = 1.5
+  ctx.lineJoin = "round"
+  ctx.stroke()
+}
+
+function render(d) {
+  const w = document.getElementById("widget")
+  const meta = d.meta || {}
+  const { total, change, pct, movers } = calc(d)
+  const up = change >= 0
+  const col = up ? "green" : "red"
+  const arrow = up ? "▲" : "▼"
+
+  w.innerHTML = `
+    <div class="row">
+      <span class="header-label muted">Daniells Portfolio</span>
+      <span class="header-time dim">${fmtDateTime(meta.fetchTimestamp)}</span>
+    </div>
+    <div class="total-value gold">${fmt(total)}</div>
+    <div class="row">
+      <span class="change-row ${col}">${arrow} ${fmtFull(change)}&nbsp;&nbsp;&nbsp;${fmtPct(pct)}</span>
+      <span class="vs-label muted">vs ${meta.prevDateDisplay||"prev"}</span>
+    </div>
+    <canvas id="spark" width="301" height="30"></canvas>
+    <div class="section-label muted">Top Movers</div>
+    <div class="movers-grid">
+    ${movers.slice(0,4).map(m => {
+      const mc = m.change>=0?"green":"red"
+      const ma = m.change>=0?"▲":"▼"
+      return `<div class="mover-cell">
+        <span class="mover-ticker">${m.ticker}</span>
+        <span class="mover-val ${mc}">${ma}&nbsp;${fmt(Math.abs(m.change))}&nbsp;${fmtPct(m.pct)}</span>
+      </div>`
+    }).join("")}
+    </div>
+  `
+
+  const canvas = document.getElementById("spark")
+  drawSparkline(canvas, d.history, up)
+
+  document.getElementById("status").textContent =
+    `Live data · ${(total/1000).toFixed(1)}k portfolio · ${movers.length} movers found`
+}
+
+fetch(JSON_URL)
+  .then(r => r.json())
+  .then(d => render(d))
+  .catch(e => {
+    document.getElementById("widget").innerHTML = `<div class="error">⚠️ Failed to load data</div>`
+    document.getElementById("status").textContent = "Error: " + e.message
+  })
+</script>
+</body>
+</html>
