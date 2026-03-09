@@ -55,6 +55,12 @@ ISINS = {
     "VGAC": "GB00BD3RZ582",
 }
 
+# Standalone prices — tracked for non-portfolio purposes (not included in any holding)
+# Written to d["meta"] so the React tracker can read them directly from the JSON
+STANDALONE_SYMBOLS = {
+    "LSEG": "LSEG.L",   # London Stock Exchange Group — used to value ShareSave options
+}
+
 # Crypto — Yahoo returns prices in GBP directly (NOT pence), so no ÷100
 CRYPTO_SYMBOLS = {
     "BTC": "BTC-GBP",
@@ -234,6 +240,15 @@ def main(pension_value=None):
         else:
             d["cryptoHistory"].append(crypto_entry)
         print(f"  Crypto portfolio total: £{total_crypto:,.2f}")
+
+    # ── Standalone prices (ShareSave etc.) ──────────────────────────────────
+    if STANDALONE_SYMBOLS:
+        print("\nStandalone prices:")
+        for label, sym in STANDALONE_SYMBOLS.items():
+            price, pdate = fetch_price(label, sym)
+            if price is not None:
+                d["meta"][f"{label.lower()}Price"]     = price
+                d["meta"][f"{label.lower()}PriceDate"] = pdate
 
     total_value = sum(hval(h) for acc in d["accounts"] for h in acc["holdings"])
 

@@ -53,6 +53,9 @@ export default function PortfolioTracker() {
   const [cryptoEditCell,setCryptoEditCell] = useState(null);
   const [cryptoEditVal,setCryptoEditVal]   = useState("");
   const [analysis,setAnalysis]             = useState(null);
+  const [charlieData,setCharlieData]       = useState({lsegPrice:null,lsegPriceDate:null,additionalSaved:0});
+  const [charlieEditCell,setCharlieEditCell] = useState(null);
+  const [charlieEditVal,setCharlieEditVal] = useState("");
 
   useEffect(()=>{(async()=>{
     try {
@@ -73,11 +76,15 @@ export default function PortfolioTracker() {
         : cfgCrypto;
       const cryptoHistory = cfg.cryptoHistory || [];
       setData({ meta:cfg.meta, lastFetch:{date:cfg.meta.fetchDateDisplay,time:fmtFetchTime(cfg.meta.fetchTimestamp),priceDate:cfg.meta.fetchDate}, accounts, history, crypto, cryptoHistory });
+      let charlieStored=null; try { const cr=await window.storage.get("charlie-uni-v1"); if(cr&&cr.value) charlieStored=JSON.parse(cr.value); } catch {}
+      const useJsonLseg=cfg.meta?.lsegPrice&&(!(charlieStored?.lsegPriceDate)||(cfg.meta.lsegPriceDate||"")>=(charlieStored.lsegPriceDate||""));
+      setCharlieData({lsegPrice:useJsonLseg?cfg.meta.lsegPrice:(charlieStored?.lsegPrice||null),lsegPriceDate:useJsonLseg?cfg.meta.lsegPriceDate:(charlieStored?.lsegPriceDate||null),additionalSaved:charlieStored?.additionalSaved||0});
     } catch(e) { console.error("Failed to load portfolio data:", e); }
     // Load analysis data (non-blocking — tab still works without it)
     try { const a = await fetch(ANALYSIS_URL).then(r=>r.ok?r.json():null); if(a) setAnalysis(a); } catch {}
   })(); },[]);
   useEffect(()=>{ if(data) window.storage.set("portfolio-data-v24",JSON.stringify(data)).catch(()=>{}); },[data]);
+  useEffect(()=>{ window.storage.set("charlie-uni-v1",JSON.stringify(charlieData)).catch(()=>{}); },[charlieData]);
 
   if(!data) return <div style={{background:"#0f1923",color:"#c9a84c",padding:40,fontFamily:"sans-serif",textAlign:"center"}}>Loading…</div>;
 
@@ -156,7 +163,7 @@ export default function PortfolioTracker() {
     <div style={S.wrap}>
       <nav style={S.nav}>
         <div style={S.logo}>Daniells Portfolio</div>
-        {[["dashboard","Dashboard"],["account","Accounts"],["allocation","Allocation"],["history","History"],["goal","Goal"],["analysis","Analysis"],["crypto","Crypto"]].map(([id,label])=>(<button key={id} style={S.tab(activeTab===id)} onClick={()=>{ setActiveTab(id); if(id!=="account") setSelectedAcc(null); }}>{label}</button>))}
+        {[["dashboard","Dashboard"],["account","Accounts"],["allocation","Allocation"],["history","History"],["goal","Goal"],["analysis","Analysis"],["crypto","Crypto"],["charlie","Charlie Uni"]].map(([id,label])=>(<button key={id} style={S.tab(activeTab===id)} onClick={()=>{ setActiveTab(id); if(id!=="account") setSelectedAcc(null); }}>{label}</button>))}
         <a href="./retirement.html" style={{marginLeft:"auto",color:"#6a7d8f",textDecoration:"none",fontSize:10,letterSpacing:"0.1em",padding:"14px 12px",borderBottom:"2px solid transparent",display:"flex",alignItems:"center",gap:4}} onMouseEnter={e=>e.currentTarget.style.color="#c9a84c"} onMouseLeave={e=>e.currentTarget.style.color="#6a7d8f"}>RETIREMENT PLANNER →</a>
         <div style={S.ver}>{version}</div>
       </nav>
@@ -673,6 +680,358 @@ export default function PortfolioTracker() {
             </table>
           </div>
           {hist.length>=2&&<div style={S.card}><div style={S.sec}>Crypto Portfolio Value History</div><CryptoChart/></div>}
+        </div>);
+      })()}
+
+      {activeTab==="charlie"&&(()=>{
+        const TODAY_DT    = new Date();
+        const UNI_START   = new Date("2028-09-01");
+        const S1_MATURITY = new Date("2026-11-01");
+        const S2_MATURITY = new Date("2028-11-01");
+        const S1_OPTIONS  = 168;
+        const S2_OPTIONS  = 100;
+        const MONTHLY_ACCOM = 600;  // accommodation
+        const MONTHLY_MAINT = 200;  // extra maintenance
+        const MONTHLY_TOTAL = MONTHLY_ACCOM + MONTHLY_MAINT; // £800/month total
+        const THREE_YR_COST = 10 * 3 * MONTHLY_TOTAL; // 10 months/year × 3 years × £800 = £24,000
+        const msPerMonth = 30.44 * 24 * 60 * 60 * 1000;
+        const monthsToUni = Math.max(0, (UNI_START   - TODAY_DT) / msPerMonth);
+        const monthsToS1  = Math.max(0, (S1_MATURITY - TODAY_DT) / msPerMonth);
+        const monthsToS2  = Math.max(0, (S2_MATURITY - TODAY_DT) / msPerMonth);
+
+        const lseg     = charlieData.lsegPrice;
+        const s1Value  = lseg ? S1_OPTIONS * lseg : null;
+        const s2Value  = lseg ? S2_OPTIONS * lseg : null;
+        const addSaved = charlieData.additionalSaved || 0;
+        const totalFund = (s1Value||0) + (s2Value||0) + addSaved;
+        const monthsCov = totalFund / MONTHLY_TOTAL;
+        const gap       = totalFund - THREE_YR_COST;
+
+        const fmtM = m => { const mm=Math.round(m); if(mm<1) return "<1m"; const y=Math.floor(mm/12),mo=mm%12; if(y===0) return `${mo}m`; return mo>0?`${y}y ${mo}m`:`${y}y`; };
+        const startCE = (k,v) => { setCharlieEditCell(k); setCharlieEditVal(v!=null?String(v):""); };
+        const commitCE = (field) => {
+          const v=parseFloat(charlieEditVal);
+          if(!isNaN(v)) setCharlieData(cd=>({...cd,[field]:v,...(field==="lsegPrice"?{lsegPriceDate:new Date().toISOString().slice(0,10)}:{})}));
+          setCharlieEditCell(null);
+        };
+
+        // 30 academic months: Sep–Jun for each of 3 academic years
+        const acadMonths = [];
+        for(const [sy,ey] of [[2028,2029],[2029,2030],[2030,2031]]){
+          for(let m=8;m<=11;m++) acadMonths.push(new Date(sy,m,1));
+          for(let m=0;m<=5;m++) acadMonths.push(new Date(ey,m,1));
+        }
+        // Index of first month >= S2 maturity (Nov 2028 = index 2)
+        const s2Idx = acadMonths.findIndex(d => d >= S2_MATURITY);
+
+        // Running balance at START of each academic month (before that month's £600 payment)
+        const balances = [];
+        let bal = (s1Value||0) + addSaved;
+        for(let i=0;i<30;i++){
+          if(i===s2Idx) bal += (s2Value||0);
+          balances.push(bal);
+          bal -= MONTHLY_TOTAL;
+        }
+
+        const PB_ANNUAL  = 0.044; // Premium Bonds ~4.4% p.a. prize equivalent (not guaranteed)
+        const PB_MONTHLY = Math.pow(1 + PB_ANNUAL, 1/12) - 1; // ~0.359%/month
+        const S1_PB_START = new Date("2026-12-01"); // Dec 2026: 1 month after maturity to transfer into ISA & sell
+        const s1PbMonths = Math.round(Math.max(0,(UNI_START - S1_PB_START)/msPerMonth)); // ~21 months
+        const s1PbGrowth = s1Value ? Math.round(s1Value*(Math.pow(1+PB_ANNUAL,s1PbMonths/12)-1)) : null;
+        // By Sep 2028 Scheme 1 has been in PBs since Dec 2026 (~21 months) — use grown value as starting balance
+        const s1PbStartVal = s1Value ? Math.round(s1Value*Math.pow(1+PB_ANNUAL,s1PbMonths/12)) : 0;
+        // PB-adjusted balance: apply monthly prize rate before each drawdown
+        const pbBalances = [];
+        let pbBal = s1PbStartVal + addSaved;
+        for(let i=0;i<30;i++){
+          if(i===s2Idx) pbBal += (s2Value||0);
+          pbBalances.push(pbBal);
+          pbBal = pbBal*(1+PB_MONTHLY) - MONTHLY_TOTAL;
+        }
+
+        const schemes = [
+          {label:"Scheme 1",maturity:"Nov 2026",mths:Math.max(0,(S1_MATURITY-TODAY_DT)/msPerMonth),opts:S1_OPTIONS,val:s1Value},
+          {label:"Scheme 2",maturity:"Nov 2028",mths:Math.max(0,(S2_MATURITY-TODAY_DT)/msPerMonth),opts:S2_OPTIONS,val:s2Value},
+        ];
+
+        const FundChart = () => {
+          if(!lseg) return <div style={{textAlign:"center",color:"#3a4d60",padding:32,fontSize:12}}>Enter LSEG price above to see the funding chart.</div>;
+          const W=700, H=250, Pd={t:28,r:46,b:68,l:72};
+          const CW=W-Pd.l-Pd.r, CH=H-Pd.t-Pd.b;
+          const slotW=CW/30, bW=slotW*0.72;
+          const allVals=[...balances,...pbBalances,MONTHLY_TOTAL,0];
+          const maxV=Math.max(...allVals)*1.08;
+          const minV=Math.min(...allVals,0);
+          const adjMin=minV<0?minV*1.12:0;
+          const rng=maxV-adjMin||1;
+          const slotLeft=i=>Pd.l+i*slotW;
+          const slotCx=i=>slotLeft(i)+slotW/2;
+          const bLeft=i=>slotCx(i)-bW/2;
+          const toY=v=>Pd.t+(1-(v-adjMin)/rng)*CH;
+          const zeroY=toY(0);
+          const bCol=v=>v<0?"#e07060":v<MONTHLY_TOTAL*3?"#c9a84c":"#70AD47";
+          const fmtTick=v=>v===0?"£0":`${v<0?"-":""}£${(Math.abs(v)/1000).toFixed(0)}k`;
+          const ticks=Array.from({length:5},(_,i)=>adjMin+rng*i/4);
+          const mAbbr=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+          return (
+            <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{display:"block",overflow:"visible"}}>
+              {/* Y-axis grid & ticks */}
+              {ticks.map((v,i)=>(
+                <g key={i}>
+                  <line x1={Pd.l} y1={toY(v)} x2={W-Pd.r} y2={toY(v)} stroke={v===0?"#2a3d50":"#1a2a38"} strokeWidth={v===0?1:0.75} strokeDasharray={v===0?"none":"3,3"}/>
+                  <text x={Pd.l-5} y={toY(v)+4} textAnchor="end" fontSize="9" fill="#4a6070">{fmtTick(v)}</text>
+                </g>
+              ))}
+              {/* £800/month required line */}
+              <line x1={Pd.l} y1={toY(MONTHLY_TOTAL)} x2={W-Pd.r} y2={toY(MONTHLY_TOTAL)} stroke="#e8dcc8" strokeWidth="1" strokeDasharray="5,3" opacity="0.45"/>
+              <text x={W-Pd.r+3} y={toY(MONTHLY_TOTAL)+4} fontSize="8" fill="#e8dcc8" opacity="0.55">£{MONTHLY_TOTAL}/m</text>
+              {/* Academic year dividers */}
+              {[10,20].map(idx=>(
+                <line key={idx} x1={Pd.l+idx*slotW} y1={Pd.t} x2={Pd.l+idx*slotW} y2={H-Pd.b} stroke="#1e2f3e" strokeDasharray="4,3"/>
+              ))}
+              {/* Scheme 2 injection */}
+              <line x1={Pd.l+s2Idx*slotW} y1={Pd.t} x2={Pd.l+s2Idx*slotW} y2={H-Pd.b+4} stroke="#4472C4" strokeWidth="1.5" strokeDasharray="3,2"/>
+              <text x={Pd.l+s2Idx*slotW+3} y={Pd.t+10} fontSize="8" fill="#4472C4">▲ +{fmt(s2Value,0)}</text>
+              {/* Stacked bars: base balance + PB interest uplift */}
+              {balances.map((v,i)=>{
+                const pbV=pbBalances[i];
+                const bTop=v>=0?toY(v):zeroY, bBot=v>=0?zeroY:toY(v);
+                const col=bCol(pbV);  // colour based on PB-adjusted balance
+                // show PB stack whenever PB balance is positive (even if base is negative)
+                const pbTop=pbV>0&&pbV>v?toY(pbV):null;
+                return (
+                  <g key={i}>
+                    <rect x={bLeft(i)} y={bTop} width={bW} height={Math.max(bBot-bTop,1)} fill={col} opacity={0.85} rx={1}/>
+                    {pbTop!==null&&<rect x={bLeft(i)} y={pbTop} width={bW} height={Math.max(bTop-pbTop,1)} fill="#c9a84c" opacity={0.55} rx={1}/>}
+                  </g>
+                );
+              })}
+              {/* Month label under every bar */}
+              {acadMonths.map((dt,i)=>(
+                <text key={i} x={slotCx(i)} y={H-Pd.b+12} textAnchor="middle" fontSize="7" fill={i===s2Idx?"#4472C4":"#394d60"}>{mAbbr[dt.getMonth()]}</text>
+              ))}
+              {/* Academic year labels */}
+              {[[0,"Academic Year 1"],[10,"Year 2"],[20,"Year 3"]].map(([idx,label])=>(
+                <text key={idx} x={Pd.l+(idx+5)*slotW} y={H-Pd.b+30} textAnchor="middle" fontSize="9" fill="#3a4d60">{label}</text>
+              ))}
+              {/* Academic year dates */}
+              {[[0,2028],[10,2029],[20,2030]].map(([idx,yr])=>(
+                <text key={idx} x={Pd.l+(idx+5)*slotW} y={H-Pd.b+46} textAnchor="middle" fontSize="8" fill="#2a3d50">{yr}/{String(yr+1).slice(2)}</text>
+              ))}
+            </svg>
+          );
+        };
+
+        return (<div style={S.body}>
+
+          {/* ── Header ── */}
+          <div style={{...S.card,borderColor:"#c9a84c44"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:16}}>
+              <div>
+                <div style={{fontSize:10,color:"#6a7d8f",letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:6}}>Charlie's University Fund</div>
+                <div style={{fontSize:22,color:"#c9a84c",fontWeight:600}}>University from September 2028 🎓</div>
+                <div style={{fontSize:12,color:"#6a7d8f",marginTop:4}}>Accommodation £{MONTHLY_ACCOM} + maintenance £{MONTHLY_MAINT} = £{MONTHLY_TOTAL}/month · Sep–Jun each year · 3-year total: {fmt(THREE_YR_COST,0)} · Two LSEG ShareSave schemes</div>
+              </div>
+              <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                <div style={S.sBox}>
+                  <div style={S.sLbl}>Months to Uni</div>
+                  <div style={{fontSize:22,color:"#e8dcc8"}}>{fmtM(monthsToUni)}</div>
+                  <div style={{fontSize:10,color:"#6a7d8f",marginTop:2}}>Sep 2028</div>
+                </div>
+                <div style={{...S.sBox,borderColor:lseg?(gap>=0?"#70AD4744":"#e0706044"):"#2a3d50"}}>
+                  <div style={S.sLbl}>vs 3-Year Cost</div>
+                  {lseg
+                    ? <><div style={{fontSize:20,color:gap>=0?"#70AD47":"#e07060"}}>{gap>=0?"▲ Covered":"▼ Shortfall"}</div><div style={{fontSize:11,color:gap>=0?"#70AD47":"#e07060",marginTop:2}}>{gap>=0?"+":""}{fmt(gap,0)} vs {fmt(THREE_YR_COST,0)}</div></>
+                    : <div style={{fontSize:13,color:"#3a4d60"}}>Enter LSEG price</div>}
+                </div>
+                <div style={S.sBox}>
+                  <div style={S.sLbl}>Months Covered</div>
+                  <div style={{fontSize:22,color:"#e8dcc8"}}>{lseg?monthsCov.toFixed(1):"—"}</div>
+                  <div style={{fontSize:10,color:"#6a7d8f",marginTop:2}}>at £{MONTHLY_TOTAL}/month</div>
+                </div>
+                <div style={{...S.sBox,borderColor:"#c9a84c44"}}>
+                  <div style={S.sLbl}>Total Fund</div>
+                  <div style={{fontSize:22,color:"#c9a84c"}}>{lseg?fmt(totalFund,0):"—"}</div>
+                  <div style={{fontSize:10,color:"#6a7d8f",marginTop:2}}>{S1_OPTIONS+S2_OPTIONS} options at current price</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── LSEG Price ── */}
+          <div style={{...S.card,borderColor:"#4472C444"}}>
+            <div style={S.sec}>LSEG Share Price</div>
+            <div style={{display:"flex",alignItems:"center",gap:24,flexWrap:"wrap"}}>
+              <div style={{...S.sBox,minWidth:200}}>
+                <div style={S.sLbl}>LSEG.L Current Price</div>
+                <div style={{fontSize:24,color:"#4472C4",fontVariantNumeric:"tabular-nums"}}>
+                  {charlieEditCell==="lsegPrice"
+                    ? <input autoFocus style={S.input} value={charlieEditVal} onChange={e=>setCharlieEditVal(e.target.value)} onBlur={()=>commitCE("lsegPrice")} onKeyDown={e=>{if(e.key==="Enter")commitCE("lsegPrice");if(e.key==="Escape")setCharlieEditCell(null);}}/>
+                    : <span onClick={()=>startCE("lsegPrice",lseg)} style={{cursor:"text",borderBottom:"1px dashed #2a3d50",paddingBottom:1}} title="Click to edit">{lseg?fmt(lseg):<span style={{color:"#3a4d60"}}>click to enter</span>}</span>
+                  }
+                </div>
+                <div style={{fontSize:10,color:"#4a6070",marginTop:4}}>{charlieData.lsegPriceDate?`Updated: ${charlieData.lsegPriceDate}`:"Enter latest LSEG.L price"} · auto-updated on daily fetch</div>
+              </div>
+              <div style={{fontSize:11,color:"#6a7d8f",lineHeight:1.9}}>
+                <div><span style={{color:"#9ab"}}>Ticker:</span> <span style={{fontFamily:"monospace",color:"#c9a84c"}}>LSEG.L</span> — London Stock Exchange Group plc</div>
+                <div>Click to update manually · or runs automatically with the daily price fetch</div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Scheme Cards ── */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+            {schemes.map(sc=>(
+              <div key={sc.label} style={{...S.card,marginBottom:0}}>
+                <div style={{fontSize:10,color:"#6a7d8f",letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:12}}>
+                  ShareSave {sc.label} — Matures {sc.maturity}
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+                  <div style={S.sBox}><div style={S.sLbl}>Options</div><div style={{fontSize:22,color:"#e8dcc8"}}>{sc.opts.toLocaleString()}</div></div>
+                  <div style={S.sBox}><div style={S.sLbl}>LSEG Price</div><div style={{fontSize:22,color:"#4472C4"}}>{lseg?fmt(lseg):<span style={{color:"#3a4d60"}}>—</span>}</div></div>
+                </div>
+                <div style={{padding:"10px 14px",background:"#0f1923",borderRadius:4,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={{fontSize:11,color:"#6a7d8f"}}>Matures in <span style={{color:"#e8dcc8"}}>{fmtM(sc.mths)}</span></div>
+                  <div style={{fontSize:18,color:"#c9a84c",fontWeight:600}}>{sc.val?fmt(sc.val,0):<span style={{color:"#3a4d60"}}>—</span>}</div>
+                </div>
+                {lseg&&<div style={{fontSize:10,marginTop:8,color:"#6a7d8f"}}>{sc.opts} × {fmt(lseg)} = {fmt(sc.val,0)}</div>}
+              </div>
+            ))}
+          </div>
+
+          {/* ── Funding Chart ── */}
+          <div style={S.card}>
+            <div style={S.sec}>Monthly Fund Balance · Sep 2028 – Jun 2031 · 30 academic months (Sep–Jun each year)</div>
+            <div style={{display:"flex",gap:16,marginBottom:10,flexWrap:"wrap",alignItems:"center",fontSize:11}}>
+              <div style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:10,height:10,borderRadius:2,background:"#70AD47"}}/><span style={{color:"#9ab"}}>OK (&gt;3 months buffer)</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:10,height:10,borderRadius:2,background:"#c9a84c"}}/><span style={{color:"#9ab"}}>Low (&lt;3 months)</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:10,height:10,borderRadius:2,background:"#e07060"}}/><span style={{color:"#9ab"}}>Deficit</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:10,height:10,borderRadius:2,background:"#c9a84c",opacity:0.55}}/><span style={{color:"#9ab"}}>+Premium Bond interest (4.4% p.a.)</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:5}}><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="#e8dcc8" strokeWidth="1.5" strokeDasharray="5,3" opacity="0.6"/></svg><span style={{color:"#9ab"}}>£{MONTHLY_TOTAL}/month needed</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:5}}><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="#4472C4" strokeWidth="1.5" strokeDasharray="3,2"/></svg><span style={{color:"#9ab"}}>Scheme 2 matures</span></div>
+            </div>
+            <FundChart/>
+          </div>
+
+          {/* ── Fund vs Cost ── */}
+          <div style={S.card}>
+            <div style={S.sec}>3-Year Accommodation vs Fund</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
+              <div style={S.sBox}><div style={S.sLbl}>Scheme 1 (Nov 2026)</div><div style={{fontSize:18,color:"#e8dcc8"}}>{s1Value?fmt(s1Value,0):"—"}</div><div style={{fontSize:10,color:"#4a6070",marginTop:2}}>{S1_OPTIONS} options</div></div>
+              <div style={S.sBox}><div style={S.sLbl}>Scheme 2 (Nov 2028)</div><div style={{fontSize:18,color:"#e8dcc8"}}>{s2Value?fmt(s2Value,0):"—"}</div><div style={{fontSize:10,color:"#4a6070",marginTop:2}}>{S2_OPTIONS} options</div></div>
+              <div style={S.sBox}>
+                <div style={S.sLbl}>Additional Savings</div>
+                <div style={{fontSize:18,color:"#e8dcc8"}}>
+                  {charlieEditCell==="additionalSaved"
+                    ? <input autoFocus style={S.input} value={charlieEditVal} onChange={e=>setCharlieEditVal(e.target.value)} onBlur={()=>commitCE("additionalSaved")} onKeyDown={e=>{if(e.key==="Enter")commitCE("additionalSaved");if(e.key==="Escape")setCharlieEditCell(null);}}/>
+                    : <span onClick={()=>startCE("additionalSaved",addSaved)} style={{cursor:"text",borderBottom:"1px dashed #2a3d50",paddingBottom:1}} title="Click to edit">{addSaved>0?fmt(addSaved,0):<span style={{color:"#3a4d60"}}>click to add</span>}</span>
+                  }
+                </div>
+                <div style={{fontSize:10,color:"#4a6070",marginTop:2}}>click to update</div>
+              </div>
+              <div style={{...S.sBox,borderColor:"#c9a84c44"}}><div style={S.sLbl}>Total Fund</div><div style={{fontSize:22,color:"#c9a84c"}}>{lseg?fmt(totalFund,0):"—"}</div></div>
+            </div>
+            <table style={S.tbl}>
+              <thead><tr>
+                <th style={S.th}>Year</th><th style={S.th}>Period</th><th style={S.thC}>Months</th><th style={S.thR}>Annual Cost</th><th style={S.thR}>Running Total</th>
+              </tr></thead>
+              <tbody>
+                {[["Year 1","Sep 2028 – Jun 2029"],["Year 2","Sep 2029 – Jun 2030"],["Year 3","Sep 2030 – Jun 2031"]].map(([yr,period],i)=>{
+                  const cost = 10 * MONTHLY_TOTAL;
+                  const running = (i+1)*cost;
+                  return (<tr key={yr} onMouseEnter={e=>e.currentTarget.style.background="#1e3040"} onMouseLeave={e=>e.currentTarget.style.background=""}>
+                    <td style={S.td}>{yr}</td>
+                    <td style={{...S.td,color:"#6a7d8f",fontSize:11}}>{period}</td>
+                    <td style={S.tdC}>10</td>
+                    <td style={S.tdR}>{fmt(cost,0)}</td>
+                    <td style={S.tdR}>{fmt(running,0)}</td>
+                  </tr>);
+                })}
+              </tbody>
+              <tfoot>
+                <tr style={{borderTop:"1px solid #c9a84c33"}}>
+                  <td style={{...S.td,color:"#c9a84c",fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase"}} colSpan={2}>3-Year Total</td>
+                  <td style={{...S.tdC,color:"#c9a84c"}}>30</td>
+                  <td style={{...S.tdR,color:"#c9a84c"}}>{fmt(THREE_YR_COST/3,0)}</td>
+                  <td style={{...S.tdR,color:"#c9a84c"}}>{fmt(THREE_YR_COST,0)}</td>
+                </tr>
+                {lseg&&<tr>
+                  <td style={{...S.td,color:gap>=0?"#70AD47":"#e07060",fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase"}} colSpan={2}>Fund {gap>=0?"Surplus":"Shortfall"}</td>
+                  <td style={S.tdC}/>
+                  <td style={{...S.tdR,color:gap>=0?"#70AD47":"#e07060"}}>{gap>=0?"+":""}{fmt(gap,0)}</td>
+                  <td style={{...S.tdR,color:"#6a7d8f",fontSize:11}}>{monthsCov.toFixed(1)} months covered</td>
+                </tr>}
+              </tfoot>
+            </table>
+          </div>
+
+          {/* ── Key Dates ── */}
+          <div style={S.card}>
+            <div style={S.sec}>Key Dates & Milestones</div>
+            <table style={S.tbl}>
+              <thead><tr>
+                <th style={S.th}>Date</th><th style={S.th}>Event</th><th style={S.thR}>Months Away</th><th style={S.thR}>Fund at That Point</th>
+              </tr></thead>
+              <tbody>
+                {[
+                  {date:"Nov 2026",event:`Scheme 1 matures — ${S1_OPTIONS} options × LSEG price`,mths:Math.max(0,(S1_MATURITY-TODAY_DT)/msPerMonth),val:s1Value,color:"#70AD47"},
+                  {date:"Sep 2028",event:"Charlie starts university 🎓 — spending begins",mths:Math.max(0,(UNI_START-TODAY_DT)/msPerMonth),val:s1Value!=null?(s1Value+addSaved):null,color:"#c9a84c"},
+                  {date:"Nov 2028",event:`Scheme 2 matures — ${S2_OPTIONS} options × LSEG price (added to pot)`,mths:Math.max(0,(S2_MATURITY-TODAY_DT)/msPerMonth),val:lseg?balances[s2Idx]:null,color:"#70AD47"},
+                  {date:"Jun 2031",event:"Estimated graduation (3-year degree)",mths:Math.max(0,(new Date("2031-06-01")-TODAY_DT)/msPerMonth),val:null,color:"#6a7d8f"},
+                ].map(({date,event,mths,val,color},i)=>(
+                  <tr key={i} onMouseEnter={e=>e.currentTarget.style.background="#1e3040"} onMouseLeave={e=>e.currentTarget.style.background=""}>
+                    <td style={{...S.td,fontFamily:"monospace",fontSize:11,color:"#9ab"}}>{date}</td>
+                    <td style={{...S.td,fontSize:11}}>{event}</td>
+                    <td style={{...S.tdR,color}}>{fmtM(mths)}</td>
+                    <td style={{...S.tdR,color}}>{val!=null?fmt(val,0):"—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ── Where to hold the payouts ── */}
+          <div style={{...S.card,borderColor:"#70AD4744"}}>
+            <div style={S.sec}>Where to Put the Payouts — Recommended Strategy</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+              <div style={{background:"#14232f",border:"1px solid #70AD4733",borderRadius:4,padding:"12px 16px"}}>
+                <div style={{fontSize:11,color:"#70AD47",fontWeight:600,letterSpacing:"0.08em",marginBottom:6}}>Scheme 1 · Matures Nov 2026 · {lseg?fmt(s1Value,0):"~£14.5k est."}</div>
+                <div style={{fontSize:13,color:"#e8dcc8",marginBottom:8}}>→ <strong style={{color:"#c9a84c"}}>Premium Bonds</strong> (NS&amp;I)</div>
+                <div style={{fontSize:11,color:"#6a7d8f",lineHeight:1.8}}>
+                  You have ~{s1PbMonths} months before spending starts. Premium Bonds are 100% capital-safe, instant access, and prizes are tax-free at ~4.4% p.a. equivalent.<br/>
+                  {s1PbGrowth?<span style={{color:"#70AD47"}}>Holding from Dec 2026 → Sep 2028 (~{s1PbMonths} months) could add approx <strong>+{fmt(s1PbGrowth,0)}</strong> in prize winnings before uni starts — if the prize rate holds at 4.4%.</span>:<span>Enter LSEG price to see estimated prize earnings.</span>}
+                </div>
+              </div>
+              <div style={{background:"#14232f",border:"1px solid #4472C433",borderRadius:4,padding:"12px 16px"}}>
+                <div style={{fontSize:11,color:"#4472C4",fontWeight:600,letterSpacing:"0.08em",marginBottom:6}}>Scheme 2 · Matures Nov 2028 · {lseg?fmt(s2Value,0):"~£8.7k est."}</div>
+                <div style={{fontSize:13,color:"#e8dcc8",marginBottom:8}}>→ <strong style={{color:"#c9a84c"}}>Premium Bonds</strong> (same pot)</div>
+                <div style={{fontSize:11,color:"#6a7d8f",lineHeight:1.8}}>
+                  Matures 2 months into Year 1. Add directly to the same Premium Bonds pot. Draw down £{MONTHLY_TOTAL}/month as needed — no exit penalty, and any prizes earned while waiting are yours to keep.
+                </div>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,borderTop:"1px solid #1e2f3e",paddingTop:12}}>
+              {[
+                {label:"Capital safety",val:"100%",color:"#70AD47",note:"Government-backed (NS&I)"},
+                {label:"Prize rate equiv.",val:"~4.4% p.a.",color:"#c9a84c",note:"Tax-free · variable — check at time"},
+                {label:"Access",val:"Instant",color:"#70AD47",note:"No notice, no penalty to withdraw"},
+                {label:"Max holding",val:"£50,000",color:"#e8dcc8",note:"Per person — well within limit"},
+              ].map(({label,val,color,note})=>(
+                <div key={label} style={S.sBox}>
+                  <div style={S.sLbl}>{label}</div>
+                  <div style={{fontSize:15,color,fontWeight:600}}>{val}</div>
+                  <div style={{fontSize:10,color:"#4a6070",marginTop:3}}>{note}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{fontSize:10,color:"#4a6070",marginTop:10,lineHeight:1.6,borderTop:"1px solid #1e2f3e",paddingTop:8}}>⚠ Not financial advice · Prize rate is variable and not guaranteed — NS&amp;I can change it at any time · Capital is 100% protected · Check current rate at nsandi.com · Timing assumes 1 month to transfer shares to ISA and sell (ISA protects any gain from CGT) · Alternative: Cash ISA gives a fixed rate but money is typically locked for a term</div>
+          </div>
+
+          <div style={{...S.card,padding:"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+            <div style={{fontSize:10,color:"#4a6070"}}>Scheme value = options × current LSEG price · 10 months/year (Sep–Jun) × 3 years = 30 months × £{MONTHLY_TOTAL} (£{MONTHLY_ACCOM} accom + £{MONTHLY_MAINT} maintenance) = {fmt(THREE_YR_COST,0)} total · Values auto-update with daily price fetch</div>
+            <div style={{fontSize:10,color:"#4a6070"}}>Update LSEG price: click price above · Additional savings: click to edit</div>
+          </div>
+
         </div>);
       })()}
     </div>
