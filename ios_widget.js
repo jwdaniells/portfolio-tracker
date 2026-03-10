@@ -268,6 +268,53 @@ async function buildWidget(d) {
 
   widget.addSpacer()
 
+  // ── Crypto bucket ──────────────────────────────────────────────────────────
+  const cryptoHoldings = d.crypto || []
+  if (cryptoHoldings.length > 0) {
+    let cryptoTotal = 0, cryptoPrev = 0
+    for (const c of cryptoHoldings) {
+      if (c.units != null && c.price != null) {
+        cryptoTotal += c.units * c.price
+        cryptoPrev  += c.units * (c.prevPrice != null ? c.prevPrice : c.price)
+      }
+    }
+    const cryptoChange = cryptoTotal - cryptoPrev
+    const cryptoPct    = cryptoPrev > 0 ? cryptoChange / cryptoPrev : 0
+    const cryptoUp     = cryptoChange >= 0
+    const cryptoCol    = cryptoUp ? C.green : C.red
+    const cryptoArrow  = cryptoUp ? "▲" : "▼"
+
+    // Separator
+    const sep = widget.addText("─────────────────────────────────────────")
+    sep.textColor = C.dim
+    sep.font = Font.systemFont(6)
+
+    widget.addSpacer(2)
+
+    const crow = widget.addStack()
+    crow.layoutHorizontally()
+    crow.centerAlignContent()
+
+    const clbl = crow.addText("CRYPTO")
+    clbl.textColor = C.muted
+    clbl.font = Font.boldSystemFont(8)
+
+    crow.addSpacer(6)
+
+    const cval = crow.addText(fmt(cryptoTotal))
+    cval.textColor = C.gold
+    cval.font = Font.boldSystemFont(9)
+
+    crow.addSpacer(6)
+
+    const cchg = crow.addText(cryptoArrow + " " + fmt(Math.abs(cryptoChange)) + "  " + fmtPct(cryptoPct))
+    cchg.textColor = cryptoCol
+    cchg.font = Font.systemFont(9)
+    cchg.minimumScaleFactor = 0.7
+
+    crow.addSpacer()
+  }
+
   return widget
 }
 
