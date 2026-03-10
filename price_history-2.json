@@ -5,8 +5,8 @@
     "fetchDateDisplay": "10 Mar 2026",
     "prevDate": "2026-03-09",
     "prevDateDisplay": "9 Mar 2026",
-    "fetchTimestamp": "2026-03-10T09:57:00Z",
-    "lsegPrice": 87.14,
+    "fetchTimestamp": "2026-03-10T19:25:00Z",
+    "lsegPrice": 85.5,
     "lsegPriceDate": "2026-03-10"
   },
   "accounts": [
@@ -21,7 +21,7 @@
           "name": "Invesco CoinShares Global Blockchain ETF GBP",
           "bucket": "High Beta / Blockchain",
           "units": 408,
-          "price": 114.3,
+          "price": 113.57,
           "costBasis": 49965.27,
           "purchaseDate": "2025-12-03",
           "ticker": "BCHS",
@@ -148,7 +148,7 @@
           "name": "Invesco CoinShares Global Blockchain ETF GBP",
           "bucket": "High Beta / Blockchain",
           "units": 45,
-          "price": 114.3,
+          "price": 113.57,
           "costBasis": 5237.42,
           "purchaseDate": "2025-08-07",
           "ticker": "BCHS",
@@ -183,7 +183,7 @@
           "name": "iShares Core MSCI World ETF (Acc) GBP",
           "bucket": "Global Equity Core",
           "units": 126,
-          "price": 97.84,
+          "price": 97.8,
           "costBasis": 12017.45,
           "purchaseDate": "2025-12-08",
           "ticker": "SWDA",
@@ -321,7 +321,7 @@
           "name": "iShares Core MSCI World ETF (Acc) GBP",
           "bucket": "Global Equity Core",
           "units": 118,
-          "price": 97.84,
+          "price": 97.8,
           "costBasis": 10625.91,
           "ticker": "SWDA",
           "isin": "IE00B4L5Y983",
@@ -504,23 +504,23 @@
     },
     {
       "date": "2026-03-10",
-      "totalValue": 832251,
+      "totalValue": 831911,
       "prices": {
-        "john-sipp|BCHS": 114.3,
+        "john-sipp|BCHS": 113.57,
         "john-sipp|BNY": 2.7679,
         "john-sipp|HSBC": 2.933,
         "john-sipp|HISL": 19.708,
         "john-sipp|LION": 2.7493,
         "john-sipp|PMIT": 2.239,
         "john-sipp|VLS80": 357.9506,
-        "john-isa|BCHS": 114.3,
+        "john-isa|BCHS": 113.57,
         "john-isa|RLSE": 1.1285,
-        "john-isa|SWDA": 97.84,
+        "john-isa|SWDA": 97.8,
         "john-pension": 12971.54,
         "elaine-sipp|BNY": 2.7679,
         "elaine-sipp|HSBC": 2.933,
         "elaine-sipp|VLS80": 357.9506,
-        "elaine-isa|SWDA": 97.84,
+        "elaine-isa|SWDA": 97.8,
         "elaine-isa|VGAC": 262.0851
       },
       "notes": "Auto-fetch 2026-03-10."
@@ -533,7 +533,7 @@
       "symbol": "BTC",
       "yahooSymbol": "BTC-GBP",
       "units": 2.24061,
-      "price": 52795.52,
+      "price": 52147.19,
       "priceDate": "2026-03-10",
       "prevPrice": 51381.05
     },
@@ -543,7 +543,7 @@
       "symbol": "ETH",
       "yahooSymbol": "ETH-GBP",
       "units": 1.80969,
-      "price": 1536.91,
+      "price": 1515.34,
       "priceDate": "2026-03-10",
       "prevPrice": 1513.65
     },
@@ -553,7 +553,7 @@
       "symbol": "XRP",
       "yahooSymbol": "XRP-GBP",
       "units": 4255.0,
-      "price": 1.053245,
+      "price": 1.034589,
       "priceDate": "2026-03-10",
       "prevPrice": 1.01849
     },
@@ -563,7 +563,7 @@
       "symbol": "ADA",
       "yahooSymbol": "ADA-GBP",
       "units": 831.813,
-      "price": 0.198207,
+      "price": 0.196291,
       "priceDate": "2026-03-10",
       "prevPrice": 0.192265
     }
@@ -583,7 +583,7 @@
     },
     {
       "date": "2026-03-10",
-      "totalValue": 125721.93
+      "totalValue": 124149.26
     }
   ]
 }
