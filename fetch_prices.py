@@ -187,13 +187,28 @@ def main(pension_value=None):
             ticker = h.get("ticker")
 
             if h.get("pensionTracking"):
+                # Manual pension — accept explicit value override from CLI arg
                 if pension_value is not None:
                     if is_new_day:
-                        h["prevManualValue"] = h.get("manualValue") or h.get("prevManualValue", 13120)
-                    h["manualValue"]     = float(pension_value)
-                    h["priceDate"]       = TODAY
+                        h["prevManualValue"] = h.get("manualValue") or h.get("prevManualValue")
+                    h["manualValue"] = float(pension_value)
+                    h["priceDate"]   = TODAY
                     updated += 1
-                prices_snapshot[acc["id"]] = h.get("manualValue", 13120)
+                    print(f"  {acc['id']:12} Manual pension value updated: £{float(pension_value):,.2f}")
+                # Auto-apply monthly £2,010.67 contribution on/after the 15th
+                contrib_amount = h.get("monthlyContribution")
+                last_contrib   = h.get("lastContributionDate", "")
+                today_dt       = datetime.date.fromisoformat(TODAY)
+                if contrib_amount and today_dt.day >= 15:
+                    this_month = f"{today_dt.year}-{today_dt.month:02d}-15"
+                    if last_contrib < this_month:
+                        h["manualValue"] = round((h.get("manualValue") or 0) + contrib_amount, 2)
+                        h["lastContributionDate"] = this_month
+                        if "contributions" not in h:
+                            h["contributions"] = []
+                        h["contributions"].append({"date": this_month, "amount": contrib_amount})
+                        print(f"  {acc['id']:12} Monthly contribution added: +£{contrib_amount:,.2f} → total £{h['manualValue']:,.2f}")
+                prices_snapshot[acc["id"]] = h.get("manualValue", 0)
                 continue
 
             if ticker and ticker in fetched:
@@ -350,7 +365,8 @@ def main(pension_value=None):
         acc_label = f"{acc.get('holder','')} {acc.get('wrapper', acc.get('id','?'))}"
         for h in acc["holdings"]:
             name      = h.get("name", "?")
-            is_manual = h.get("pensionTracking") or h.get("ticker") is None
+            is_manual    = bool(h.get("pensionTracking") or h.get("ticker") is None)
+            is_estimated = False  # proxy pricing removed — pension is manual only
             price     = h.get("price")
             pd        = h.get("priceDate", "?")
             val       = hval(h)
@@ -361,6 +377,10 @@ def main(pension_value=None):
                 flag = "  ⚑ manual entry" + (f" — CHECK: {bdays}bd since last update" if bdays > 5 else "")
                 if bdays > 5:
                     stale_warnings.append((acc_label, name, pd, bdays, "manual"))
+            elif is_estimated:
+                bdays = business_days_since(pd) if pd and pd != "?" else 0
+                price_str = f"£{price:>8.4f}  {pd:10s}" if price else f"    —     {pd or '?':10s}"
+                flag = f"  ~ estimated (proxy {h.get('proxyTicker')})"
             elif price is None:
                 bdays = business_days_since(pd) if pd and pd != "?" else 99
                 price_str = f"    —     {pd or '?':10s}"
