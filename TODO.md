@@ -7,6 +7,9 @@ Items are grouped by type. Add a date when an item is completed.
 ## 🔧 Enhancements
 
 - [ ] **iOS Widget — cron trigger**: Set up cron-job.org to trigger the GitHub Actions fetch-prices workflow reliably (4× daily or targeted around market close). Replaces the unreliable GitHub scheduled trigger.
+- [ ] **UI — Fetch Prices button**: Add a button to the portfolio tracker UI that triggers the GitHub Actions fetch-prices workflow on demand (via GitHub API dispatch), so prices can be refreshed without going to GitHub Actions tab.
+- [ ] **Analysis page — Refresh button**: Add a "Refresh Analysis" button on the Analysis tab that re-runs the analysis generation (triggers `generate_docs.py` or equivalent) and reloads the results without a full page reload.
+- [ ] **Analysis page — Extra content**: Review and expand the analysis information shown — e.g. sector breakdown, risk metrics, performance vs benchmark, drawdown stats. To be scoped further.
 
 ---
 
