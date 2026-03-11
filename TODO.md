@@ -8,6 +8,7 @@ Items are grouped by type. Add a date when an item is completed.
 
 - [ ] **iOS Widget — cron trigger**: Set up cron-job.org to trigger the GitHub Actions fetch-prices workflow reliably (4× daily or targeted around market close). Replaces the unreliable GitHub scheduled trigger.
 - [ ] **Analysis page — Extra content**: Review and expand the analysis information shown — e.g. sector breakdown, risk metrics, performance vs benchmark, drawdown stats. To be scoped further.
+- [ ] **Externalise config**: Move all hardcoded personal values and variables (goal amount, baseline, monthly contributions, DOB, LSEG scheme constants, rate assumptions, ticker/symbol mappings, etc.) out of the JSX and Python files into a single `config.json` file. Makes the project easier to maintain and reuse.
 
 ---
 
