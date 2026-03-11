@@ -1,0 +1,34 @@
+name: Refresh Analysis
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests urllib3 --quiet
+
+      - name: Run fetch_analysis.py
+        run: python fetch_analysis.py
+
+      - name: Commit and push analysis.json
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add analysis.json
+          git diff --cached --quiet || git commit -m "Auto-refresh analysis $(date +'%d %b %Y %H:%M')"
+          git push

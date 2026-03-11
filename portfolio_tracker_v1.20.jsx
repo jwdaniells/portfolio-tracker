@@ -142,9 +142,42 @@ export default function PortfolioTracker() {
   };
 
   const refreshAnalysis = async () => {
-    setAnalysisBusy(true);
-    try { const a = await fetch(`./analysis.json?v=${Date.now()}`).then(r=>r.ok?r.json():null); if(a) setAnalysis(a); } catch {}
-    setAnalysisBusy(false);
+    let pat = localStorage.getItem("portfolio_gh_pat");
+    if (!pat) {
+      pat = window.prompt("Enter your GitHub Personal Access Token\n(needs Actions: write scope on this repo):");
+      if (!pat) return;
+      localStorage.setItem("portfolio_gh_pat", pat.trim());
+    }
+    setAnalysisBusy("running");
+    try {
+      const res = await fetch(
+        "https://api.github.com/repos/jwdaniells/portfolio-tracker/actions/workflows/fetch-analysis.yml/dispatches",
+        { method:"POST", headers:{Authorization:`Bearer ${pat.trim()}`,Accept:"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28","Content-Type":"application/json"}, body:JSON.stringify({ref:"main"}) }
+      );
+      if (res.status === 401) { localStorage.removeItem("portfolio_gh_pat"); setAnalysisBusy(null); return; }
+      if (res.status !== 204) { setAnalysisBusy("error"); setTimeout(()=>setAnalysisBusy(null),4000); return; }
+      // Workflow triggered — poll for updated analysis.json (up to ~3 min)
+      setAnalysisBusy("waiting");
+      const currentDate = analysis?.meta?.analysisDate || "";
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        try {
+          const a = await fetch(`./analysis.json?v=${Date.now()}`).then(r=>r.ok?r.json():null);
+          if (a && a.meta?.analysisDate && a.meta.analysisDate !== currentDate) {
+            setAnalysis(a);
+            setAnalysisBusy("done");
+            clearInterval(poll);
+            setTimeout(()=>setAnalysisBusy(null), 4000);
+          }
+        } catch {}
+        if (attempts >= 36) { // 3 min timeout
+          clearInterval(poll);
+          setAnalysisBusy("timeout");
+          setTimeout(()=>setAnalysisBusy(null), 5000);
+        }
+      }, 5000);
+    } catch { setAnalysisBusy("error"); setTimeout(()=>setAnalysisBusy(null),4000); }
   };
 
   const startEdit  = (k,v) => { setEditCell(k); setEditVal(v!=null?String(v):""); };
@@ -446,7 +479,7 @@ export default function PortfolioTracker() {
       })()}
 
       {activeTab==="analysis"&&(()=>{
-        if(!analysis) return (<div style={S.body}><div style={{...S.card,textAlign:"center",padding:"60px 20px"}}><div style={{fontSize:14,color:"#6a7d8f",marginBottom:12}}>No analysis data available.</div><div style={{fontSize:12,color:"#4a6070",marginBottom:16}}>Run <code style={{background:"#1e3040",padding:"2px 6px",borderRadius:2,fontFamily:"monospace",fontSize:11}}>python3 fetch_analysis.py</code> or double-click <code style={{background:"#1e3040",padding:"2px 6px",borderRadius:2,fontFamily:"monospace",fontSize:11}}>refresh_analysis.command</code> to generate analysis.</div><button onClick={refreshAnalysis} disabled={analysisBusy} style={{padding:"6px 18px",fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",border:"1px solid #2a3d50",background:"transparent",color:analysisBusy?"#4a6070":"#6a7d8f",cursor:analysisBusy?"default":"pointer",borderRadius:2,fontFamily:"inherit"}}>{analysisBusy?"↻ Checking…":"↻ Reload Analysis"}</button></div></div>);
+        if(!analysis) return (<div style={S.body}><div style={{...S.card,textAlign:"center",padding:"60px 20px"}}><div style={{fontSize:14,color:"#6a7d8f",marginBottom:12}}>No analysis data available.</div><div style={{fontSize:12,color:"#4a6070",marginBottom:16}}>Click below to run a fresh analysis from live market data.</div><button onClick={refreshAnalysis} disabled={!!analysisBusy} style={{padding:"6px 18px",fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",border:"1px solid #2a3d50",background:"transparent",color:analysisBusy?"#4a6070":"#6a7d8f",cursor:analysisBusy?"default":"pointer",borderRadius:2,fontFamily:"inherit"}}>{analysisBusy==="running"?"↻ Triggering…":analysisBusy==="waiting"?"↻ Running… (may take ~1 min)":"↻ Refresh Analysis"}</button></div></div>);
 
         const sm = analysis.summary;
         const holdings = analysis.holdings || [];
@@ -467,7 +500,7 @@ export default function PortfolioTracker() {
           {/* ── Analysis action row ── */}
           <div style={{display:"flex",justifyContent:"flex-end",alignItems:"center",marginBottom:12,gap:12}}>
             <span style={{fontSize:11,color:"#4a6070"}}>Analysis: {analysis.meta?.analysisDateDisplay||"—"}</span>
-            <button onClick={refreshAnalysis} disabled={analysisBusy} style={{padding:"5px 14px",fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",border:"1px solid #2a3d50",background:"transparent",color:analysisBusy?"#4a6070":"#6a7d8f",cursor:analysisBusy?"default":"pointer",borderRadius:2,fontFamily:"inherit"}}>{analysisBusy?"↻ Refreshing…":"↻ Refresh Analysis"}</button>
+            <button onClick={refreshAnalysis} disabled={!!analysisBusy} style={{padding:"5px 14px",fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",border:"1px solid",borderColor:analysisBusy==="done"?"#70AD47":analysisBusy==="error"||analysisBusy==="timeout"?"#e07060":"#2a3d50",background:analysisBusy==="done"?"#70AD4718":analysisBusy==="error"||analysisBusy==="timeout"?"#e0706018":"transparent",color:analysisBusy==="done"?"#70AD47":analysisBusy==="error"||analysisBusy==="timeout"?"#e07060":analysisBusy?"#4a6070":"#6a7d8f",cursor:analysisBusy?"default":"pointer",borderRadius:2,fontFamily:"inherit",transition:"all 0.2s"}}>{analysisBusy==="running"?"↻ Triggering…":analysisBusy==="waiting"?"↻ Running… (~1 min)":analysisBusy==="done"?"✓ Updated":analysisBusy==="error"?"✗ Failed":analysisBusy==="timeout"?"⏱ Timed out":"↻ Refresh Analysis"}</button>
           </div>
           {/* ── Portfolio Outlook Summary ── */}
           <div style={{...S.card,borderColor:sm.onTrack?"#70AD4744":"#e0706044"}}>
