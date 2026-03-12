@@ -1,13 +1,13 @@
 {
   "meta": {
     "version": "v1.20",
-    "fetchDate": "2026-03-11",
-    "fetchDateDisplay": "11 Mar 2026",
-    "prevDate": "2026-03-10",
-    "prevDateDisplay": "10 Mar 2026",
-    "fetchTimestamp": "2026-03-11T19:30:00Z",
-    "lsegPrice": 84.24,
-    "lsegPriceDate": "2026-03-11"
+    "fetchDate": "2026-03-12",
+    "fetchDateDisplay": "12 Mar 2026",
+    "prevDate": "2026-03-11",
+    "prevDateDisplay": "11 Mar 2026",
+    "fetchTimestamp": "2026-03-12T19:29:00Z",
+    "lsegPrice": 85.86,
+    "lsegPriceDate": "2026-03-12"
   },
   "accounts": [
     {
@@ -21,16 +21,16 @@
           "name": "Invesco CoinShares Global Blockchain ETF GBP",
           "bucket": "High Beta / Blockchain",
           "units": 408,
-          "price": 112.52,
+          "price": 110.46,
           "costBasis": 49965.27,
           "purchaseDate": "2025-12-03",
           "ticker": "BCHS",
           "isin": "IE00BGV5VN51",
-          "priceDate": "2026-03-11",
-          "prevPrice": 113.57,
+          "priceDate": "2026-03-12",
+          "prevPrice": 112.52,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         },
         {
@@ -38,16 +38,16 @@
           "name": "BNY Mellon Multi-Asset Balanced Inst W Acc",
           "bucket": "Core Multi-Asset / Balanced",
           "units": 48989.78,
-          "price": 2.8038,
+          "price": 2.7946,
           "costBasis": 121450.22,
           "purchaseDate": "2024-09-24",
           "ticker": "BNY",
           "isin": "GB00B86LX253",
-          "priceDate": "2026-03-10",
-          "prevPrice": 2.7679,
+          "priceDate": "2026-03-12",
+          "prevPrice": 2.8038,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         },
         {
@@ -55,16 +55,16 @@
           "name": "HSBC Global Strategy Balanced C Acc",
           "bucket": "Core Multi-Asset / Balanced",
           "units": 46044.98,
-          "price": 2.9709,
+          "price": 2.9611,
           "costBasis": 121450.22,
           "purchaseDate": "2024-09-24",
           "ticker": "HSBC",
           "isin": "GB00B76WP695",
-          "priceDate": "2026-03-10",
-          "prevPrice": 2.933,
+          "priceDate": "2026-03-12",
+          "prevPrice": 2.9709,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         },
         {
@@ -72,16 +72,16 @@
           "name": "HSBC Islamic Global Equity Index IC GBP",
           "bucket": "Global Equity",
           "units": 3950.421,
-          "price": 19.723,
+          "price": 19.881,
           "costBasis": 80000.0,
           "purchaseDate": "2025-11-28",
           "ticker": "HISL",
           "isin": "LU2092164776",
-          "priceDate": "2026-03-09",
-          "prevPrice": 19.708,
+          "priceDate": "2026-03-11",
+          "prevPrice": 19.723,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         },
         {
@@ -89,16 +89,16 @@
           "name": "Liontrust Sustainable Future Managed 6 Net Acc",
           "bucket": "Thematic / Sustainable Equity",
           "units": 19721.93,
-          "price": 2.7734,
+          "price": 2.7372,
           "costBasis": 53977.87,
           "purchaseDate": "2024-09-24",
           "ticker": "LION",
           "isin": "GB00B8FDBQ23",
-          "priceDate": "2026-03-10",
-          "prevPrice": 2.7493,
+          "priceDate": "2026-03-12",
+          "prevPrice": 2.7734,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         },
         {
@@ -106,16 +106,16 @@
           "name": "Premier Miton Diversified Growth D Acc",
           "bucket": "Diversified Growth",
           "units": 31985.093,
-          "price": 2.265,
+          "price": 2.252,
           "costBasis": 65552.39,
           "purchaseDate": "2024-09-24",
           "ticker": "PMIT",
           "isin": "GB00BMQ5L211",
-          "priceDate": "2026-03-10",
-          "prevPrice": 2.239,
+          "priceDate": "2026-03-12",
+          "prevPrice": 2.265,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         },
         {
@@ -123,16 +123,16 @@
           "name": "Vanguard LifeStrategy 80% Equity A Acc",
           "bucket": "Core Multi-Asset / Balanced",
           "units": 399.9383,
-          "price": 356.6259,
+          "price": 358.8372,
           "costBasis": 121450.26,
           "purchaseDate": "2024-09-24",
           "ticker": "VLS80",
           "isin": "GB00B4PQW151",
-          "priceDate": "2026-03-09",
-          "prevPrice": 357.9506,
+          "priceDate": "2026-03-11",
+          "prevPrice": 356.6259,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         }
       ]
@@ -148,16 +148,16 @@
           "name": "Invesco CoinShares Global Blockchain ETF GBP",
           "bucket": "High Beta / Blockchain",
           "units": 45,
-          "price": 112.52,
+          "price": 110.46,
           "costBasis": 5237.42,
           "purchaseDate": "2025-08-07",
           "ticker": "BCHS",
           "isin": "IE00BGV5VN51",
-          "priceDate": "2026-03-11",
-          "prevPrice": 113.57,
+          "priceDate": "2026-03-12",
+          "prevPrice": 112.52,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         },
         {
@@ -165,17 +165,17 @@
           "name": "Royal London Sterling Extra Yield Bond A",
           "bucket": "Income / Bond",
           "units": 846.29,
-          "price": 1.1257,
+          "price": 1.1261,
           "costBasis": 985.87,
           "purchaseDate": "2021-06-20",
           "dividendsReceived": 270.79,
           "ticker": "RLSE",
           "isin": "IE0032571485",
-          "priceDate": "2026-03-09",
-          "prevPrice": 1.1285,
+          "priceDate": "2026-03-11",
+          "prevPrice": 1.1257,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         },
         {
@@ -183,16 +183,16 @@
           "name": "iShares Core MSCI World ETF (Acc) GBP",
           "bucket": "Global Equity Core",
           "units": 126,
-          "price": 97.17,
+          "price": 96.67,
           "costBasis": 12017.45,
           "purchaseDate": "2025-12-08",
           "ticker": "SWDA",
           "isin": "IE00B4L5Y983",
-          "priceDate": "2026-03-11",
-          "prevPrice": 97.8,
+          "priceDate": "2026-03-12",
+          "prevPrice": 97.17,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         }
       ]
@@ -262,16 +262,16 @@
           "name": "BNY Mellon Multi-Asset Balanced Inst W Acc",
           "bucket": "Core Multi-Asset / Balanced",
           "units": 9937.06,
-          "price": 2.8038,
+          "price": 2.7946,
           "costBasis": 24634.9,
           "purchaseDate": "2024-09-24",
           "ticker": "BNY",
           "isin": "GB00B86LX253",
-          "priceDate": "2026-03-10",
-          "prevPrice": 2.7679,
+          "priceDate": "2026-03-12",
+          "prevPrice": 2.8038,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         },
         {
@@ -279,16 +279,16 @@
           "name": "HSBC Global Strategy Balanced C Acc",
           "bucket": "Core Multi-Asset / Balanced",
           "units": 9486.93,
-          "price": 2.9709,
+          "price": 2.9611,
           "costBasis": 25023.13,
           "purchaseDate": "2024-09-24",
           "ticker": "HSBC",
           "isin": "GB00B76WP695",
-          "priceDate": "2026-03-10",
-          "prevPrice": 2.933,
+          "priceDate": "2026-03-12",
+          "prevPrice": 2.9709,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         },
         {
@@ -296,16 +296,16 @@
           "name": "Vanguard LifeStrategy 80% Equity A Acc",
           "bucket": "Core Multi-Asset / Balanced",
           "units": 159.3,
-          "price": 356.6259,
+          "price": 358.8372,
           "costBasis": 48375.03,
           "purchaseDate": "2024-09-24",
           "ticker": "VLS80",
           "isin": "GB00B4PQW151",
-          "priceDate": "2026-03-09",
-          "prevPrice": 357.9506,
+          "priceDate": "2026-03-11",
+          "prevPrice": 356.6259,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         }
       ]
@@ -321,15 +321,15 @@
           "name": "iShares Core MSCI World ETF (Acc) GBP",
           "bucket": "Global Equity Core",
           "units": 118,
-          "price": 97.17,
+          "price": 96.67,
           "costBasis": 10625.91,
           "ticker": "SWDA",
           "isin": "IE00B4L5Y983",
-          "priceDate": "2026-03-11",
-          "prevPrice": 97.8,
+          "priceDate": "2026-03-12",
+          "prevPrice": 97.17,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         },
         {
@@ -337,15 +337,15 @@
           "name": "Vanguard FTSE Global All Cap Index GBP Acc",
           "bucket": "Global Equity Core",
           "units": 48.9316,
-          "price": 260.7917,
+          "price": 262.4771,
           "costBasis": 12287.93,
           "ticker": "VGAC",
           "isin": "GB00BD3RZ582",
-          "priceDate": "2026-03-09",
-          "prevPrice": 262.0851,
+          "priceDate": "2026-03-11",
+          "prevPrice": 260.7917,
           "fetchStatus": {
             "ok": true,
-            "source": "Yahoo Finance 2026-03-11"
+            "source": "Yahoo Finance 2026-03-12"
           }
         }
       ]
@@ -547,6 +547,29 @@
         "elaine-isa|VGAC": 260.7917
       },
       "notes": "Auto-fetch 2026-03-11."
+    },
+    {
+      "date": "2026-03-12",
+      "totalValue": 834733,
+      "prices": {
+        "john-sipp|BCHS": 110.46,
+        "john-sipp|BNY": 2.7946,
+        "john-sipp|HSBC": 2.9611,
+        "john-sipp|HISL": 19.881,
+        "john-sipp|LION": 2.7372,
+        "john-sipp|PMIT": 2.252,
+        "john-sipp|VLS80": 358.8372,
+        "john-isa|BCHS": 110.46,
+        "john-isa|RLSE": 1.1261,
+        "john-isa|SWDA": 96.67,
+        "john-pension": 12971.54,
+        "elaine-sipp|BNY": 2.7946,
+        "elaine-sipp|HSBC": 2.9611,
+        "elaine-sipp|VLS80": 358.8372,
+        "elaine-isa|SWDA": 96.67,
+        "elaine-isa|VGAC": 262.4771
+      },
+      "notes": "Auto-fetch 2026-03-12."
     }
   ],
   "crypto": [
@@ -556,9 +579,9 @@
       "symbol": "BTC",
       "yahooSymbol": "BTC-GBP",
       "units": 2.24061,
-      "price": 52612.0,
-      "priceDate": "2026-03-11",
-      "prevPrice": 52147.19
+      "price": 52570.46,
+      "priceDate": "2026-03-12",
+      "prevPrice": 52612.0
     },
     {
       "id": "eth",
@@ -566,9 +589,9 @@
       "symbol": "ETH",
       "yahooSymbol": "ETH-GBP",
       "units": 1.80969,
-      "price": 1546.84,
-      "priceDate": "2026-03-11",
-      "prevPrice": 1515.34
+      "price": 1543.32,
+      "priceDate": "2026-03-12",
+      "prevPrice": 1546.84
     },
     {
       "id": "xrp",
@@ -576,9 +599,9 @@
       "symbol": "XRP",
       "yahooSymbol": "XRP-GBP",
       "units": 4255.0,
-      "price": 1.039689,
-      "priceDate": "2026-03-11",
-      "prevPrice": 1.034589
+      "price": 1.031769,
+      "priceDate": "2026-03-12",
+      "prevPrice": 1.039689
     },
     {
       "id": "ada",
@@ -586,9 +609,9 @@
       "symbol": "ADA",
       "yahooSymbol": "ADA-GBP",
       "units": 831.813,
-      "price": 0.198094,
-      "priceDate": "2026-03-11",
-      "prevPrice": 0.196291
+      "price": 0.196377,
+      "priceDate": "2026-03-12",
+      "prevPrice": 0.198094
     }
   ],
   "cryptoHistory": [
@@ -611,6 +634,10 @@
     {
       "date": "2026-03-11",
       "totalValue": 125270.93
+    },
+    {
+      "date": "2026-03-12",
+      "totalValue": 125136.36
     }
   ]
 }
