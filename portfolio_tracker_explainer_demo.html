@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smith Portfolio Tracker — Explainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0a1220;
+    --navy2: #0f1c2e;
+    --navy3: #162338;
+    --gold: #c9a84c;
+    --gold2: #e2c47a;
+    --gold-dim: #8a6f2e;
+    --green: #4a9e5c;
+    --red: #c0504d;
+    --blue: #3a72b8;
+    --text: #e8dcc8;
+    --muted: #7a8fa8;
+    --border: #1e3040;
+  }
+
+  body {
+    background: var(--navy);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ─── STAGE ─── */
+  #stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .scene {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease;
+    padding: 60px 80px;
+  }
+  .scene.active { opacity: 1; pointer-events: all; }
+
+  /* ─── BACKGROUND GRAIN ─── */
+  .grain {
+    position: fixed;
+    inset: -200%;
+    width: 400%;
+    height: 400%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 1;
+    animation: grainShift 8s steps(2) infinite;
+  }
+  @keyframes grainShift {
+    0%   { transform: translate(0,0); }
+    25%  { transform: translate(-2%,-2%); }
+    50%  { transform: translate(2%,0); }
+    75%  { transform: translate(0,2%); }
+    100% { transform: translate(0,0); }
+  }
+
+  /* ─── RADIAL BG GLOW ─── */
+  .glow-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 30%, rgba(201,168,76,0.05) 0%, transparent 70%);
+  }
+
+  /* ─── PROGRESS BAR ─── */
+  #progress-wrap {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    z-index: 100;
+  }
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    transition: width 0.15s linear;
+    box-shadow: 0 0 8px rgba(201,168,76,0.5);
+  }
+
+  /* ─── CONTROLS ─── */
+  #controls {
+    position: fixed;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 100;
+    background: rgba(10,18,32,0.8);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 8px 20px;
+    backdrop-filter: blur(12px);
+  }
+  #controls button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: color 0.2s;
+    font-family: inherit;
+  }
+  #controls button:hover { color: var(--gold); }
+  #scene-dots { display: flex; gap: 6px; }
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .dot.active { background: var(--gold); transform: scale(1.3); }
+
+  /* ─── SCENE-LEVEL COMPONENTS ─── */
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.6s ease 0.2s;
+  }
+  .scene.active .eyebrow { opacity: 1; transform: translateY(0); }
+
+  .headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 5vw, 68px);
+    font-weight: 300;
+    line-height: 1.1;
+    text-align: center;
+    color: var(--text);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.7s ease 0.3s;
+    max-width: 900px;
+  }
+  .scene.active .headline { opacity: 1; transform: translateY(0); }
+  .headline em { font-style: italic; color: var(--gold); }
+  .headline strong { font-weight: 600; }
+
+  .sub {
+    font-size: clamp(14px, 1.8vw, 18px);
+    font-weight: 300;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 18px;
+    max-width: 680px;
+    line-height: 1.7;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: all 0.7s ease 0.5s;
+  }
+  .scene.active .sub { opacity: 1; transform: translateY(0); }
+
+  /* ─── DIVIDER ─── */
+  .divider {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 28px auto;
+    opacity: 0;
+    transition: opacity 0.6s ease 0.4s;
+  }
+  .scene.active .divider { opacity: 1; }
+
+  /* ─── STAT CARDS ─── */
+  .stat-row {
+    display: flex;
+    gap: 20px;
+    margin-top: 36px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.7s ease 0.6s;
+  }
+  .scene.active .stat-row { opacity: 1; transform: translateY(0); }
+
+  .stat-card {
+    background: var(--navy2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 24px;
+    min-width: 160px;
+    text-align: center;
+  }
+  .stat-card .label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-family: 'DM Mono', monospace;
+  }
+  .stat-card .value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-card .value.green { color: var(--green); }
+  .stat-card .value.muted { color: var(--text); }
+  .stat-card .change {
+    font-size: 11px;
+    color: var(--green);
+    margin-top: 4px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ─── FEATURE LIST ─── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 32px;
+    width: 100%;
+    max-width: 820px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.7s ease 0.5s;
+  }
+  .scene.active .feature-grid { opacity: 1; transform: translateY(0); }
+
+  .feature-item {
+    background: var(--navy2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .feature-item .icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .feature-item .feat-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 5px;
+  }
+  .feature-item .feat-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ─── MOCK DASHBOARD ─── */
+  .mock-dashboard {
+    width: 100%;
+    max-width: 900px;
+    background: var(--navy2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 28px;
+    opacity: 0;
+    transform: scale(0.96) translateY(20px);
+    transition: all 0.8s ease 0.4s;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,168,76,0.08);
+  }
+  .scene.active .mock-dashboard { opacity: 1; transform: scale(1) translateY(0); }
+
+  .mock-nav {
+    background: var(--navy);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 4px;
+    height: 40px;
+  }
+  .mock-logo {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    font-weight: 500;
+    margin-right: 16px;
+    text-transform: uppercase;
+  }
+  .mock-tab {
+    padding: 0 12px;
+    height: 40px;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid transparent;
+    font-family: 'DM Mono', monospace;
+  }
+  .mock-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .mock-ver { margin-left: auto; font-size: 9px; color: var(--border); font-family: 'DM Mono', monospace; }
+
+  .mock-body { padding: 16px; }
+  .mock-kpi-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 14px; }
+  .mock-kpi {
+    background: var(--navy3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+  }
+  .mock-kpi .klabel { font-size: 8px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .mock-kpi .kval { font-family: 'DM Mono', monospace; font-size: 15px; color: var(--gold); font-weight: 500; }
+  .mock-kpi .kval.green { color: var(--green); }
+  .mock-kpi .kval.muted { color: var(--text); }
+  .mock-kpi .ksub { font-size: 9px; color: var(--green); margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+  .mock-chart-row { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+  .mock-card { background: var(--navy3); border: 1px solid var(--border); border-radius: 4px; padding: 12px; }
+  .mock-card-title { font-size: 8px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 8px; font-family: 'DM Mono', monospace; }
+
+  /* simple SVG chart */
+  .mini-chart { width: 100%; height: 70px; }
+
+  .alloc-bar { height: 8px; border-radius: 4px; overflow: hidden; display: flex; margin-bottom: 8px; }
+  .alloc-segment { height: 100%; }
+  .alloc-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+  .alloc-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: var(--muted); }
+  .alloc-dot { width: 6px; height: 6px; border-radius: 1px; flex-shrink: 0; }
+
+  /* ─── RETIREMENT CHART ─── */
+  .ret-content {
+    width: 100%;
+    max-width: 900px;
+    margin-top: 24px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.7s ease 0.5s;
+  }
+  .scene.active .ret-content { opacity: 1; transform: translateY(0); }
+
+  .ret-phases {
+    display: flex;
+    gap: 0;
+    background: var(--navy2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .ret-phase {
+    flex: 1;
+    padding: 16px;
+    border-right: 1px solid var(--border);
+    transition: background 0.3s;
+  }
+  .ret-phase:last-child { border-right: none; }
+  .ret-phase .year { font-size: 9px; font-family: 'DM Mono', monospace; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.1em; }
+  .ret-phase .income { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--green); }
+  .ret-phase .income.low { color: var(--red); }
+  .ret-phase .note { font-size: 10px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .ret-phase .bar-wrap { height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .ret-phase .bar-fill { height: 100%; background: var(--green); border-radius: 2px; }
+  .ret-phase .bar-fill.low { background: var(--red); }
+
+  /* ─── GOAL TRACKER ─── */
+  .goal-content {
+    width: 100%;
+    max-width: 820px;
+    margin-top: 28px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.7s ease 0.5s;
+  }
+  .scene.active .goal-content { opacity: 1; transform: translateY(0); }
+
+  .goal-kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 16px; }
+  .goal-kpi { background: var(--navy2); border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; }
+  .goal-kpi .gl { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; font-family: 'DM Mono', monospace; }
+  .goal-kpi .gv { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 600; color: var(--gold); }
+  .goal-kpi .gs { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  .progress-track {
+    background: var(--navy2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 22px;
+  }
+  .progress-label { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  .progress-label span { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .progress-label strong { color: var(--gold); }
+  .progress-outer { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; position: relative; }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    border-radius: 4px;
+    width: 0;
+    transition: width 1.5s ease 0.8s;
+    box-shadow: 0 0 12px rgba(201,168,76,0.4);
+  }
+  .scene.active .progress-fill { width: 59.9%; }
+
+  /* ─── AI SCENE ─── */
+  .chat-bubble-wrap {
+    width: 100%;
+    max-width: 680px;
+    margin-top: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.7s ease 0.5s;
+  }
+  .scene.active .chat-bubble-wrap { opacity: 1; transform: translateY(0); }
+
+  .bubble {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  .bubble.ai { justify-content: flex-start; }
+  .bubble.user { justify-content: flex-end; }
+
+  .bubble-content {
+    max-width: 75%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .bubble.ai .bubble-content {
+    background: var(--navy2);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+    color: var(--text);
+  }
+  .bubble.user .bubble-content {
+    background: linear-gradient(135deg, #1e3a5f, #152840);
+    border: 1px solid #2a4a70;
+    border-bottom-right-radius: 4px;
+    color: var(--text);
+  }
+  .bubble-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .bubble.ai .bubble-icon { background: linear-gradient(135deg, #1a2e45, #0f1c2e); border: 1px solid var(--border); }
+  .bubble.user .bubble-icon { background: linear-gradient(135deg, #1e3a5f, #152840); border: 1px solid #2a4a70; order: 2; }
+  .bubble.user .bubble-content { order: 1; }
+
+  /* ─── CTA SCENE ─── */
+  .cta-block {
+    text-align: center;
+    margin-top: 32px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.7s ease 0.6s;
+  }
+  .scene.active .cta-block { opacity: 1; transform: translateY(0); }
+
+  .cta-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    color: var(--navy);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 14px 36px;
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    box-shadow: 0 4px 24px rgba(201,168,76,0.3);
+    transition: all 0.3s;
+    text-decoration: none;
+  }
+  .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(201,168,76,0.4); }
+
+  .tagline-list {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    margin-top: 36px;
+    opacity: 0;
+    transition: opacity 0.7s ease 0.8s;
+  }
+  .scene.active .tagline-list { opacity: 1; }
+  .tl-item { text-align: center; }
+  .tl-item .tl-val { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 600; color: var(--gold); }
+  .tl-item .tl-lbl { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-top: 4px; font-family: 'DM Mono', monospace; }
+
+  /* ─── SCENE-SPECIFIC LAYOUTS ─── */
+  #scene-1 { background: radial-gradient(ellipse 100% 80% at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 70%); }
+  #scene-1 .headline { font-size: clamp(42px, 6vw, 80px); }
+
+  /* animated counter */
+  .counter {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(48px, 7vw, 90px);
+    font-weight: 300;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+    opacity: 0;
+    transition: opacity 0.5s ease 0.4s;
+  }
+  .scene.active .counter { opacity: 1; }
+
+  /* line animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .anim-delay-1 { animation: fadeUp 0.6s ease 0.3s both; }
+  .anim-delay-2 { animation: fadeUp 0.6s ease 0.5s both; }
+  .anim-delay-3 { animation: fadeUp 0.6s ease 0.7s both; }
+  .anim-delay-4 { animation: fadeUp 0.6s ease 0.9s both; }
+  .anim-delay-5 { animation: fadeUp 0.6s ease 1.1s both; }
+
+  /* number counter animation */
+  @keyframes countUp {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .scene-label {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: rgba(201,168,76,0.3);
+    text-transform: uppercase;
+    z-index: 50;
+  }
+
+  /* gold line separator */
+  .gold-line {
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+    margin: 16px auto;
+    opacity: 0;
+    transition: opacity 0.6s ease 0.4s;
+  }
+  .scene.active .gold-line { opacity: 1; }
+
+  /* problem cards */
+  .problem-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 32px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.7s ease 0.5s;
+  }
+  .scene.active .problem-row { opacity: 1; transform: translateY(0); }
+  .problem-card {
+    flex: 1;
+    background: var(--navy2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+  }
+  .problem-card .p-icon { font-size: 28px; margin-bottom: 10px; }
+  .problem-card .p-title { font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 6px; }
+  .problem-card .p-desc { font-size: 11px; color: var(--muted); line-height: 1.6; }
+  .arrow-right { color: var(--gold); font-size: 24px; display: flex; align-items: center; }
+
+  /* solved badge */
+  .solved { color: var(--green); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; opacity: 0; transition: opacity 0.5s ease 1s; }
+  .scene.active .solved { opacity: 1; }
+
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="glow-bg"></div>
+<div class="scene-label" id="scene-label">01 / 07</div>
+
+<div id="stage">
+
+  <!-- SCENE 1: HERO -->
+  <div class="scene active" id="scene-1">
+    <div class="eyebrow">Personal Finance · Redefined</div>
+    <h1 class="headline">Your entire investment life,<br><em>beautifully clear.</em></h1>
+    <div class="divider"></div>
+    <p class="sub">One intelligent dashboard that tracks every account, models your retirement, and plots the path to your financial goals — built around you.</p>
+    <div class="tagline-list">
+      <div class="tl-item"><div class="tl-val">14</div><div class="tl-lbl">Holdings tracked</div></div>
+      <div class="tl-item"><div class="tl-val">£742k</div><div class="tl-lbl">Portfolio baseline</div></div>
+      <div class="tl-item"><div class="tl-val">35yr</div><div class="tl-lbl">Retirement horizon</div></div>
+      <div class="tl-item"><div class="tl-val">3 mins</div><div class="tl-lbl">To set up</div></div>
+    </div>
+  </div>
+
+  <!-- SCENE 2: THE PROBLEM -->
+  <div class="scene" id="scene-2">
+    <div class="eyebrow">The Problem</div>
+    <h1 class="headline">Most investors are flying <em>blind.</em></h1>
+    <div class="problem-row">
+      <div class="problem-card">
+        <div class="p-icon">📂</div>
+        <div class="p-title">Scattered Accounts</div>
+        <div class="p-desc">SIPPs, ISAs, workplace pensions — spread across multiple providers with no single view</div>
+      </div>
+      <div class="problem-card">
+        <div class="p-icon">📊</div>
+        <div class="p-title">No Real-Time Picture</div>
+        <div class="p-desc">Spreadsheets go stale. Apps don't understand OEICs, ISINs, or UK pension structures</div>
+      </div>
+      <div class="problem-card">
+        <div class="p-icon">🎯</div>
+        <div class="p-title">Retirement is a Guess</div>
+        <div class="p-desc">DB pensions, state pension, PCLS, drawdown — no tool models the full picture together</div>
+      </div>
+    </div>
+    <div class="solved">✦ &nbsp; We built the solution</div>
+  </div>
+
+  <!-- SCENE 3: LIVE DASHBOARD -->
+  <div class="scene" id="scene-3">
+    <div class="eyebrow">The Dashboard</div>
+    <h1 class="headline" style="font-size: clamp(28px, 3.5vw, 46px); margin-bottom: 0;">Every account. Every holding. <em>One screen.</em></h1>
+
+    <div class="mock-dashboard">
+      <div class="mock-nav">
+        <div class="mock-logo">Smith Portfolio</div>
+        <div class="mock-tab active">Dashboard</div>
+        <div class="mock-tab">Accounts</div>
+        <div class="mock-tab">Allocation</div>
+        <div class="mock-tab">History</div>
+        <div class="mock-tab">Goal</div>
+        <div class="mock-tab">Retirement</div>
+        <div class="mock-ver">v1.0</div>
+      </div>
+      <div class="mock-body">
+        <div class="mock-kpi-row">
+          <div class="mock-kpi"><div class="klabel">Total Value</div><div class="kval">£748,320</div></div>
+          <div class="mock-kpi"><div class="klabel">Cost Basis</div><div class="kval muted">£651,440</div></div>
+          <div class="mock-kpi"><div class="klabel">Total Gain</div><div class="kval green">£96,880</div></div>
+          <div class="mock-kpi"><div class="klabel">Return</div><div class="kval green">+14.4%</div><div class="ksub">+8.2% p.a.</div></div>
+          <div class="mock-kpi"><div class="klabel">Since 1 Mar</div><div class="kval green">+£4,230</div><div class="ksub">+0.57%</div></div>
+        </div>
+        <div class="mock-chart-row">
+          <div class="mock-card">
+            <div class="mock-card-title">Portfolio History</div>
+            <svg class="mini-chart" viewBox="0 0 400 70">
+              <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#70AD47" stop-opacity="0.3"/><stop offset="100%" stop-color="#70AD47" stop-opacity="0"/></linearGradient></defs>
+              <path d="M10,55 L60,50 L110,45 L160,42 L210,38 L260,30 L310,22 L360,14 L390,10" fill="none" stroke="#70AD47" stroke-width="1.5"/>
+              <path d="M10,55 L60,50 L110,45 L160,42 L210,38 L260,30 L310,22 L360,14 L390,10 L390,65 L10,65 Z" fill="url(#cg)"/>
+              <circle cx="390" cy="10" r="3" fill="#70AD47"/>
+              <text x="10" y="65" fill="#4a6070" font-size="8" font-family="monospace">Feb 25</text>
+              <text x="370" y="65" fill="#4a6070" font-size="8" font-family="monospace">Now</text>
+            </svg>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-title">Allocation</div>
+            <div class="alloc-bar">
+              <div class="alloc-segment" style="width:42%;background:#4472C4"></div>
+              <div class="alloc-segment" style="width:24%;background:#70AD47"></div>
+              <div class="alloc-segment" style="width:14%;background:#e07060"></div>
+              <div class="alloc-segment" style="width:12%;background:#9E7FC0"></div>
+              <div class="alloc-segment" style="width:8%;background:#c9a84c"></div>
+            </div>
+            <div class="alloc-legend">
+              <div class="alloc-item"><div class="alloc-dot" style="background:#4472C4"></div>Multi-Asset Balanced 42%</div>
+              <div class="alloc-item"><div class="alloc-dot" style="background:#70AD47"></div>Global Eq. 24%</div>
+              <div class="alloc-item"><div class="alloc-dot" style="background:#e07060"></div>Sustainable Equity 14%</div>
+              <div class="alloc-item"><div class="alloc-dot" style="background:#9E7FC0"></div>Diversified Growth 12%</div>
+              <div class="alloc-item"><div class="alloc-dot" style="background:#c9a84c"></div>Income 8%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 4: RETIREMENT -->
+  <div class="scene" id="scene-4">
+    <div class="eyebrow">Retirement Planner</div>
+    <h1 class="headline" style="font-size: clamp(28px, 3.5vw, 48px);">Model the income you'll <em>actually</em> receive — year by year.</h1>
+
+    <div class="ret-content">
+      <div class="ret-phases">
+        <div class="ret-phase">
+          <div class="year">Mar 2031</div>
+          <div class="income low">£0</div>
+          <div class="note">Retire — portfolio only. Full £60k from drawdown.</div>
+          <div class="bar-wrap"><div class="bar-fill low" style="width:0%"></div></div>
+        </div>
+        <div class="ret-phase">
+          <div class="year">Mar 2033</div>
+          <div class="income">£8,200</div>
+          <div class="note">+ Previous employer DB pensions begin. Portfolio drawdown reduces.</div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:12.5%"></div></div>
+        </div>
+        <div class="ret-phase">
+          <div class="year">Mar 2035</div>
+          <div class="income">£18,500</div>
+          <div class="note">+ State Pension. Mortgage cleared via PCLS.</div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:31.7%"></div></div>
+        </div>
+        <div class="ret-phase">
+          <div class="year">Feb 2038</div>
+          <div class="income">£28,950</div>
+          <div class="note">Full income floor — 48.3% of target guaranteed for life.</div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:53.1%"></div></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="mock-card" style="border-radius:6px;">
+          <div class="mock-card-title">Bear (4%) · Portfolio</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:#e07060;font-weight:600;">£0.96m</div>
+          <div style="font-size:10px;color:#7a8fa8;margin-top:2px;">at retirement · Mar 2030</div>
+        </div>
+        <div class="mock-card" style="border-radius:6px;border-color:rgba(201,168,76,0.3)">
+          <div class="mock-card-title">Base (7%) · Portfolio</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:#c9a84c;font-weight:600;">£1.24m</div>
+          <div style="font-size:10px;color:#7a8fa8;margin-top:2px;">at retirement · Mar 2030</div>
+        </div>
+        <div class="mock-card" style="border-radius:6px;">
+          <div class="mock-card-title">Bull (12%) · Portfolio</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:#4a9e5c;font-weight:600;">£1.69m</div>
+          <div style="font-size:10px;color:#7a8fa8;margin-top:2px;">at retirement · Mar 2030</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 5: GOAL TRACKER -->
+  <div class="scene" id="scene-5">
+    <div class="eyebrow">Goal Tracker</div>
+    <h1 class="headline" style="font-size: clamp(28px, 3.5vw, 48px);">Are you <em>ahead</em> of schedule — or behind?<br>Know instantly.</h1>
+
+    <div class="goal-content">
+      <div class="goal-kpis">
+        <div class="goal-kpi">
+          <div class="gl">Target</div>
+          <div class="gv">£1,250,000</div>
+          <div class="gs">By March 2030</div>
+        </div>
+        <div class="goal-kpi">
+          <div class="gl">Required Rate</div>
+          <div class="gv">8.10% p.a.</div>
+          <div class="gs">£1,750/month contributions</div>
+        </div>
+        <div class="goal-kpi" style="border-color:rgba(74,158,92,0.4)">
+          <div class="gl">vs Required Pace</div>
+          <div class="gv" style="color:#4a9e5c">▲ Ahead</div>
+          <div class="gs" style="color:#4a9e5c">+£4,230 above required track</div>
+        </div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-label">
+          <span>£742k today</span>
+          <span><strong>59.9%</strong> of goal</span>
+          <span>£1.25m target</span>
+        </div>
+        <div class="progress-outer">
+          <div class="progress-fill"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;">
+          <span style="font-size:10px;color:#4a6070;font-family:monospace;">Feb 2026</span>
+          <span style="font-size:10px;color:#c9a84c;font-family:monospace;">📍 Now</span>
+          <span style="font-size:10px;color:#4a6070;font-family:monospace;">Feb 2031</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 6: AI SETUP -->
+  <div class="scene" id="scene-6">
+    <div class="eyebrow">AI-Powered Setup</div>
+    <h1 class="headline" style="font-size: clamp(26px, 3.5vw, 46px);">Your personalised tracker,<br>built by <em>conversation.</em></h1>
+
+    <div class="chat-bubble-wrap">
+      <div class="bubble ai anim-delay-1">
+        <div class="bubble-icon">✦</div>
+        <div class="bubble-content">Hi! I'm going to help you build your personalised investment tracker. Let's start simply — do you invest as an individual or as a couple?</div>
+      </div>
+      <div class="bubble user anim-delay-2">
+        <div class="bubble-icon">👤</div>
+        <div class="bubble-content">As a couple — myself and my wife.</div>
+      </div>
+      <div class="bubble ai anim-delay-3">
+        <div class="bubble-icon">✦</div>
+        <div class="bubble-content">Got it. Which types of accounts do you hold? For example: ISA, SIPP, workplace pension, general investment account…</div>
+      </div>
+      <div class="bubble user anim-delay-4">
+        <div class="bubble-icon">👤</div>
+        <div class="bubble-content">We both have SIPPs and ISAs. I also have a workplace pension through my employer.</div>
+      </div>
+      <div class="bubble ai anim-delay-5">
+        <div class="bubble-icon">✦</div>
+        <div class="bubble-content">Perfect. I'll set those up. For your SIPP holdings, just tell me the fund names — I'll find the ISINs and set up price tracking automatically. What's your first fund?</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 7: CTA -->
+  <div class="scene" id="scene-7">
+    <div class="eyebrow">Your Financial Future</div>
+    <h1 class="headline">Take control of your wealth.<br><em>In minutes.</em></h1>
+    <div class="gold-line"></div>
+    <p class="sub">A personalised portfolio tracker and retirement planner, built for you through a simple conversation. No spreadsheets. No manual setup. Just clarity.</p>
+
+    <div class="cta-block">
+      <a class="cta-btn" href="#">Build My Tracker →</a>
+    </div>
+
+    <div class="stat-row" style="margin-top: 40px;">
+      <div class="stat-card">
+        <div class="label">Setup time</div>
+        <div class="value">~10 min</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Accounts supported</div>
+        <div class="value muted">All UK</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Retirement modelling</div>
+        <div class="value green">✓ Full</div>
+        <div class="change">DB · SP · PCLS · Tax</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Starting from</div>
+        <div class="value">£49</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /stage -->
+
+<!-- PROGRESS + CONTROLS -->
+<div id="progress-wrap">
+  <div id="progress-bar" style="width:0%"></div>
+</div>
+
+<div id="controls">
+  <button id="btn-prev">‹</button>
+  <div id="scene-dots"></div>
+  <button id="btn-play-pause">⏸</button>
+  <button id="btn-next">›</button>
+</div>
+
+<script>
+const SCENES = 7;
+const DURATIONS = [5500, 5000, 6000, 6500, 5500, 6000, 7000]; // ms per scene
+let current = 0;
+let playing = true;
+let timer = null;
+let startTime = null;
+let elapsed = 0;
+let rafId = null;
+
+const scenes = document.querySelectorAll('.scene');
+const dots = document.getElementById('scene-dots');
+const bar = document.getElementById('progress-bar');
+const btnPlay = document.getElementById('btn-play-pause');
+const sceneLabel = document.getElementById('scene-label');
+
+// Build dots
+for (let i = 0; i < SCENES; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.addEventListener('click', () => goTo(i));
+  dots.appendChild(d);
+}
+
+function updateDots() {
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.classList.toggle('active', i === current);
+  });
+}
+
+function goTo(idx) {
+  scenes[current].classList.remove('active');
+  current = idx;
+  scenes[current].classList.add('active');
+  updateDots();
+  sceneLabel.textContent = String(current + 1).padStart(2, '0') + ' / 0' + SCENES;
+  elapsed = 0;
+  if (playing) startTimer();
+}
+
+function startTimer() {
+  cancelAnimationFrame(rafId);
+  startTime = performance.now();
+
+  function tick(now) {
+    if (!playing) return;
+    elapsed = now - startTime;
+    const pct = Math.min(100, (elapsed / DURATIONS[current]) * 100);
+    bar.style.width = pct + '%';
+    if (elapsed >= DURATIONS[current]) {
+      goTo((current + 1) % SCENES);
+    } else {
+      rafId = requestAnimationFrame(tick);
+    }
+  }
+  rafId = requestAnimationFrame(tick);
+}
+
+function pause() {
+  playing = false;
+  cancelAnimationFrame(rafId);
+  btnPlay.textContent = '▶';
+}
+
+function play() {
+  playing = true;
+  btnPlay.textContent = '⏸';
+  startTimer();
+}
+
+document.getElementById('btn-next').addEventListener('click', () => goTo((current + 1) % SCENES));
+document.getElementById('btn-prev').addEventListener('click', () => goTo((current - 1 + SCENES) % SCENES));
+btnPlay.addEventListener('click', () => playing ? pause() : play());
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') goTo((current + 1) % SCENES);
+  if (e.key === 'ArrowLeft')  goTo((current - 1 + SCENES) % SCENES);
+  if (e.key === ' ') playing ? pause() : play();
+});
+
+// Start
+startTimer();
+</script>
+</body>
+</html>
